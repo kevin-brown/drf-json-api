@@ -115,6 +115,22 @@ class JsonApiMixin(object):
 
         return item
 
+    def remap_url_field(self, data):
+        from rest_framework.settings import api_settings
+
+        if isinstance(data, list):
+            return [self.remap_url_field(item) for item in data]
+
+        item = data.copy()
+
+        url_field = api_settings.URL_FIELD_NAME
+
+        if url_field in item:
+            item["href"] = item[url_field]
+            del item[url_field]
+
+        return item
+
     def render(self, data, accepted_media_type=None, renderer_context=None):
         wrapper = {}
 
@@ -140,6 +156,8 @@ class JsonApiMixin(object):
         data = self.stringify_field_data(data, pk_field)
 
         if data:
+            data = self.remap_url_field(data)
+
             for field_name, field in fields.iteritems():
                 if isinstance(field, relations.PrimaryKeyRelatedField):
                     data = self.stringify_field_data(data, field_name)

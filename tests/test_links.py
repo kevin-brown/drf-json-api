@@ -22,6 +22,7 @@ def test_single_links(client):
             {
                 "id": "1",
                 "body": "Some text for testing.",
+                "href": "http://testserver/comments/1/",
                 "links": {
                     "post": "1",
                 }
@@ -55,6 +56,7 @@ def test_multiple_links(client):
             {
                 "id": "1",
                 "title": "Rails is Omakase",
+                "href": "http://testserver/posts/1/",
                 "links": {
                     "author": "1",
                     "comments": ["1", "2"]

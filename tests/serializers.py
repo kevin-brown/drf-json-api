@@ -2,23 +2,22 @@ from rest_framework import relations, serializers
 from tests import models
 
 
-class CommentSerializer(serializers.ModelSerializer):
-    post = relations.HyperlinkedRelatedField(view_name="post-detail")
+class CommentSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
+        fields = ("id", "url", "post", "body", )
         model = models.Comment
 
 
-class PersonSerializer(serializers.ModelSerializer):
+class PersonSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
+        fields = ("id", "url", "name", )
         model = models.Person
 
 
-class PostSerializer(serializers.ModelSerializer):
-    author = relations.HyperlinkedRelatedField(view_name="person-detail")
-    comments = relations.HyperlinkedRelatedField(view_name="comment-detail", many=True)
+class PostSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
-        fields = ("id", "title", "author", "comments")
+        fields = ("id", "url", "title", "author", "comments", )
         model = models.Post

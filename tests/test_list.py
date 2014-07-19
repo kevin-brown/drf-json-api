@@ -23,6 +23,7 @@ def test_single_item_list(client):
         "people": [
             {
                 "id": "1",
+                "href": "http://testserver/people/1/",
                 "name": "test",
             },
         ]
@@ -41,10 +42,12 @@ def test_multiple_item_list(client):
         "people": [
             {
                 "id": "1",
+                "href": "http://testserver/people/1/",
                 "name": "test",
             },
             {
                 "id": "2",
+                "href": "http://testserver/people/2/",
                 "name": "other",
             },
         ]

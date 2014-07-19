@@ -106,10 +106,12 @@ class JsonApiMixin(object):
         item = data.copy()
 
         if field_name in item:
-            obj = field.from_native(item[field_name])
-            print obj.pk
-
-            item[field_name] = encoding.force_text(obj.pk)
+            if field.many:
+                obj_list = [field.from_native(url) for url in item[field_name]]
+                item[field_name] = [encoding.force_text(obj.pk) for obj in obj_list]
+            else:
+                obj = field.from_native(item[field_name])
+                item[field_name] = encoding.force_text(obj.pk)
 
         return item
 

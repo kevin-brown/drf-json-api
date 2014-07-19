@@ -9,6 +9,36 @@ pytestmark = pytest.mark.django_db
 def test_single_links(client):
     author = models.Person.objects.create(name="test")
     post = models.Post.objects.create(author=author, title="Rails is Omakase")
+    models.Comment.objects.create(post=post, body="Some text for testing.")
+
+    results =  {
+        "links": {
+            "comments.post": {
+                "href": "http://testserver/posts/{comments.post}/",
+                "type": "posts",
+            },
+        },
+        "comments": [
+            {
+                "id": "1",
+                "body": "Some text for testing.",
+                "links": {
+                    "post": "1",
+                }
+            },
+        ],
+    }
+
+    response = client.get(reverse("comment-list"))
+
+    assert response.content == json.dumps(results, sort_keys=True)
+
+
+def test_multiple_links(client):
+    author = models.Person.objects.create(name="test")
+    post = models.Post.objects.create(author=author, title="Rails is Omakase")
+    models.Comment.objects.create(post=post, body="Test comment one.")
+    models.Comment.objects.create(post=post, body="Test comment two.")
 
     results =  {
         "links": {
@@ -16,6 +46,10 @@ def test_single_links(client):
                 "href": "http://testserver/people/{posts.author}/",
                 "type": "people",
             },
+            "posts.comments": {
+                "href": "http://testserver/comments/{posts.comments}/",
+                "type": "comments",
+            }
         },
         "posts": [
             {
@@ -23,6 +57,7 @@ def test_single_links(client):
                 "title": "Rails is Omakase",
                 "links": {
                     "author": "1",
+                    "comments": ["1", "2"]
                 }
             },
         ],

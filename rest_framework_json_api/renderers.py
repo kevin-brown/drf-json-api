@@ -1,5 +1,5 @@
 from rest_framework import relations, renderers
-from rest_framework_jsonapi import encoders
+from rest_framework_json_api import encoders
 from django.utils import encoding, six
 
 

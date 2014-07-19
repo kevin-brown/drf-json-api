@@ -3,7 +3,7 @@ import pytest
 
 @pytest.fixture()
 def renderer():
-    from rest_framework_jsonapi import renderers
+    from rest_framework_json_api import renderers
 
     return renderers.JsonApiRenderer()
 
@@ -77,7 +77,7 @@ def pytest_configure():
         ),
         REST_FRAMEWORK={
             "DEFAULT_RENDERER_CLASSES": (
-                "rest_framework_jsonapi.renderers.JsonApiRenderer",
+                "rest_framework_json_api.renderers.JsonApiRenderer",
             ),
         },
     )

@@ -3,180 +3,166 @@ from rest_framework_json_api import encoders
 from django.utils import encoding, six
 
 
+def convert_resource(resource, request):
+    links = {}
+    linked = {}
+    data = resource.copy()
+
+    fields = fields_from_resource(resource)
+
+    if "id" in fields:
+        data["id"] = encoding.force_text(data["id"])
+
+    if "url" in fields:
+        data["href"] = data["url"]
+        del data["url"]
+
+    for field_name, field in six.iteritems(fields):
+        if isinstance(field, relations.HyperlinkedRelatedField):
+            data, field_links, field_linked = handle_url_field(data, field, field_name, request)
+
+            links.update(field_links)
+            linked.update(field_linked)
+
+    return (data, links, linked)
+
+
+def prepend_links_with_name(links, name):
+    changed_links = links.copy()
+
+    for link_name, link_obj in six.iteritems(links):
+        prepended_name = "%s.%s" % (name, link_name)
+        link_template = "{%s}" % link_name
+        prepended_template = "{%s}" % prepended_name
+
+        updated_obj = changed_links[link_name]
+
+        updated_obj["href"] = link_obj["href"].replace(link_template, prepended_template)
+
+        changed_links[prepended_name] = changed_links[link_name]
+        del changed_links[link_name]
+
+    print(changed_links)
+
+    return changed_links
+
+def handle_url_field(resource, field, field_name, request):
+    links = {}
+    linked = {}
+    data = resource.copy()
+
+    model = model_from_obj(field)
+    resource_type = model_to_resource_type(model)
+
+    links[field_name] = {
+        "href": url_to_template(field.view_name, request, field_name),
+        "type": resource_type,
+    }
+
+    if field_name in data:
+        if "links" not in data:
+            data["links"] = {}
+
+        data["links"][field_name] = url_to_pk(data[field_name], field)
+        del data[field_name]
+
+    return (data, links, linked)
+
+
+def url_to_pk(url_data, field):
+    if field.many:
+        obj_list = [field.from_native(url) for url in url_data]
+        return [encoding.force_text(obj.pk) for obj in obj_list]
+
+    obj = field.from_native(url_data)
+    return encoding.force_text(obj.pk)
+
+def url_to_template(view_name, request, template_name):
+    from rest_framework.reverse import reverse
+
+    test_pk = 999999
+
+    test_kwargs = {
+        "pk": test_pk,
+    }
+    test_reverse = reverse(view_name, kwargs=test_kwargs, request=request)
+
+    href = test_reverse.replace(encoding.force_text(test_pk), "{%s}" % template_name)
+
+    return href
+
+def fields_from_resource(resource):
+    fields = getattr(resource, "fields", None)
+
+    if fields is not None:
+        return fields
+
+    return None
+
+
+def model_from_obj(obj):
+    model = getattr(obj, "model", None)
+
+    if model is not None:
+        return model
+
+    queryset = getattr(obj, "queryset", None)
+
+    if queryset is not None:
+        return queryset.model
+
+    return None
+
+
+def model_to_resource_type(model):
+    if model is None:
+        return "data"
+
+    return encoding.force_text(model._meta.verbose_name_plural)
+
+
 class JsonApiMixin(object):
     encoder_class = encoders.JSONEncoder
-
-    def determine_fields(self, data, renderer_context):
-        fields = getattr(data, "fields", None)
-
-        if fields is not None:
-            return fields
-
-        if isinstance(data, list) and data:
-            data = next(iter(data))
-
-            return self.determine_fields(
-                data=data,
-                renderer_context=renderer_context,
-            )
-
-        if renderer_context is not None:
-            view = renderer_context.get("view", None)
-
-            if hasattr(view, "get_serializer"):
-                serializer = view.get_serializer(instance=None)
-                data = serializer.data
-
-                return self.determine_fields(
-                    data=data,
-                    renderer_context=renderer_context,
-                )
-
-        return None
-
-    def get_model_from_view(self, view):
-        model = getattr(view, "model", None)
-
-        if model is not None:
-            return model
-
-        queryset = getattr(view, "queryset", None)
-
-        if queryset is not None:
-            return queryset.model
-
-        return None
-
-    def get_resource_type(self, data, renderer_context):
-        view = renderer_context.get("view", None)
-
-        model = self.get_model_from_view(view)
-
-        return six.text_type(model._meta.verbose_name_plural)
-
-    def stringify_field_data(self, data, pk_field):
-        if isinstance(data, list):
-            return [self.stringify_field_data(item, pk_field) for item in data]
-
-        item = data.copy()
-
-        if pk_field in item:
-            item[pk_field] = encoding.force_text(item[pk_field])
-
-        return item
-
-    def linkify_field_data(self, data, field_name):
-        if isinstance(data, list):
-            return [self.linkify_field_data(item, field_name) for item in data]
-
-        item = data.copy()
-
-        if field_name in item:
-            if "links" not in item:
-                item["links"] = {}
-
-            item["links"][field_name] = item[field_name]
-            del item[field_name]
-
-        return item
-
-    def link_format(self, field, link_name, request=None):
-        from rest_framework.reverse import reverse
-
-        test_pk = 999999
-
-        model = field.queryset.model
-
-        test_kwargs = {
-            "pk": test_pk,
-        }
-        test_reverse = reverse(field.view_name, kwargs=test_kwargs, request=request)
-
-        href = test_reverse.replace(encoding.force_text(test_pk), "{%s}" % link_name)
-
-        return {
-            "type": encoding.force_text(model._meta.verbose_name_plural),
-            "href": href,
-        }
-
-    def url_to_pk(self, data, field_name, field):
-        if isinstance(data, list):
-            return [self.url_to_pk(item, field_name, field) for item in data]
-
-        item = data.copy()
-
-        if field_name in item:
-            if field.many:
-                obj_list = [field.from_native(url) for url in item[field_name]]
-                item[field_name] = [encoding.force_text(obj.pk) for obj in obj_list]
-            else:
-                obj = field.from_native(item[field_name])
-                item[field_name] = encoding.force_text(obj.pk)
-
-        return item
-
-    def remap_url_field(self, data):
-        from rest_framework.settings import api_settings
-
-        if isinstance(data, list):
-            return [self.remap_url_field(item) for item in data]
-
-        item = data.copy()
-
-        url_field = api_settings.URL_FIELD_NAME
-
-        if url_field in item:
-            item["href"] = item[url_field]
-            del item[url_field]
-
-        return item
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
         wrapper = {}
 
-        fields = self.determine_fields(
-            data=data,
-            renderer_context=renderer_context,
-        )
-
-        resource_type = self.get_resource_type(
-            data=data,
-            renderer_context=renderer_context,
-        )
-
-        resource_type = resource_type or "data"
-
         view = renderer_context.get("view", None)
         request = renderer_context.get("request", None)
 
-        model = self.get_model_from_view(view)
+        model = model_from_obj(view)
+        resource_type = model_to_resource_type(model)
 
-        pk_field = encoding.force_text(model._meta.pk.name)
+        links = {}
+        linked = {}
+        item = {}
 
-        data = self.stringify_field_data(data, pk_field)
+        if isinstance(data, list):
+            links = {}
+            linked = {}
+            items = []
 
-        if data:
-            data = self.remap_url_field(data)
+            for resource in data:
+                converted_item, resource_links, resource_linked = \
+                    convert_resource(resource, request)
 
-            for field_name, field in six.iteritems(fields):
-                if isinstance(field, relations.PrimaryKeyRelatedField):
-                    data = self.stringify_field_data(data, field_name)
+                items.append(converted_item)
+                links.update(resource_links)
+                linked.update(resource_linked)
 
-                if isinstance(field, relations.HyperlinkedRelatedField):
-                    data = self.url_to_pk(data, field_name, field)
+            item = items
+        else:
+            item, links, linked = convert_resource(data, request)
 
-                    if "links" not in wrapper:
-                        wrapper["links"] = {}
+        wrapper[resource_type] = item
 
-                    link_name = "%s.%s" % (resource_type, field_name)
+        if links:
+            links = prepend_links_with_name(links, resource_type)
 
-                    if link_name not in wrapper["links"]:
-                        wrapper["links"][link_name] = self.link_format(field, link_name, request)
+            wrapper["links"] = links
 
-                if isinstance(field, relations.RelatedField):
-                    data = self.linkify_field_data(data, field_name)
-
-        wrapper[resource_type] = data
+        if linked:
+            wrapper["linked"] = linked
 
         return super(JsonApiMixin, self).render(
             data=wrapper,

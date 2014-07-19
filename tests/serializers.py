@@ -22,6 +22,21 @@ class PostSerializer(serializers.HyperlinkedModelSerializer):
         fields = ("id", "url", "title", "author", "comments", )
         model = models.Post
 
+class MinimalCommentSerializer(CommentSerializer):
+
+    class Meta(CommentSerializer.Meta):
+        fields = ("id", "url", "body", )
+
+
+class MinimalPostSerializer(PostSerializer):
+
+    class Meta(PostSerializer.Meta):
+        fields = ("id", "url", "title", )
+
+
+class NestedCommentSerializer(CommentSerializer):
+    post = MinimalPostSerializer()
+
 
 class NestedPostSerializer(PostSerializer):
-    comments = CommentSerializer(many=True)
+    comments = MinimalCommentSerializer(many=True)

@@ -24,7 +24,7 @@ def convert_resource(resource, request):
             links.update(field_links)
             linked.update(field_linked)
 
-        if isinstance(field, serializers.Serializer):
+        if isinstance(field, serializers.ModelSerializer):
             data, field_links, field_linked = handle_nested_serializer(data, field, field_name, request)
 
             links.update(field_links)
@@ -70,13 +70,9 @@ def handle_nested_serializer(resource, field, field_name, request):
 
             field_links = prepend_links_with_name(field_links, resource_type)
 
-            nested_fields = fields_from_resource(item)
-
-            if "url" in nested_fields:
-                url_field = nested_fields["url"]
-
+            if hasattr(field.opts, "view_name"):
                 field_links[field_name] = {
-                    "href": url_to_template(url_field.view_name, request, field_name),
+                    "href": url_to_template(field.opts.view_name, request, field_name),
                     "type": resource_type,
                 }
 
@@ -91,6 +87,31 @@ def handle_nested_serializer(resource, field, field_name, request):
             data["links"] = {}
 
         data["links"][field_name] = obj_ids
+        del data[field_name]
+    else:
+        item = data[field_name]
+        linked_obj, field_links, field_linked = convert_resource(item, request)
+
+        field_links = prepend_links_with_name(field_links, resource_type)
+
+        if hasattr(field.opts, "view_name"):
+            field_links[field_name] = {
+                "href": url_to_template(field.opts.view_name, request, field_name),
+                "type": resource_type,
+            }
+
+        links.update(field_links)
+
+        if resource_type not in linked:
+            linked[resource_type] = []
+
+        linked[resource_type].append(linked_obj)
+
+        if "links" not in data:
+            data["links"] = {}
+
+        data["links"][field_name] = linked_obj["id"]
+
         del data[field_name]
 
     return data, links, linked

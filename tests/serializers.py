@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import relations, serializers
 from tests import models
 
 
@@ -15,6 +15,7 @@ class PersonSerializer(serializers.ModelSerializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
+    author = relations.HyperlinkedRelatedField(view_name="person-detail")
 
     class Meta:
         fields = ("id", "title", "author")

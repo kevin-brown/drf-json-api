@@ -13,7 +13,7 @@ def test_single_links(client):
     results =  {
         "links": {
             "posts.author": {
-                "href": "http://testserver/people/{posts.author}",
+                "href": "http://testserver/people/{posts.author}/",
                 "type": "people",
             },
         },
@@ -23,11 +23,11 @@ def test_single_links(client):
                 "title": "Rails is Omakase",
                 "links": {
                     "author": "1",
-                },
+                }
             },
         ],
     }
 
     response = client.get(reverse("post-list"))
 
-    assert response.content == json.dumps(results)
+    assert response.content == json.dumps(results, sort_keys=True)

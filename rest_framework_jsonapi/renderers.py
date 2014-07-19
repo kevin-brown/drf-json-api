@@ -1,5 +1,5 @@
 from rest_framework import renderers
-from django.utils import six
+from django.utils import encoding, six
 
 
 class JsonApiMixin(object):
@@ -32,24 +32,23 @@ class JsonApiMixin(object):
 
         return None
 
-    def resource_type(self, data, renderer_context):
-        if renderer_context is None:
-            return None
-
-        view = renderer_context.get("view", None)
-
-        if view is None:
-            return None
-
+    def get_model_from_view(self, view):
         model = getattr(view, "model", None)
 
-        if model is None:
-            queryset = getattr(view, "queryset", None)
+        if model is not None:
+            return model
 
-            if queryset is None:
-                return None
+        queryset = getattr(view, "queryset", None)
 
-            model = queryset.model
+        if queryset is not None:
+            return queryset.model
+
+        return None
+
+    def get_resource_type(self, data, renderer_context):
+        view = renderer_context.get("view", None)
+
+        model = self.get_model_from_view(view)
 
         return six.text_type(model._meta.verbose_name_plural)
 
@@ -61,7 +60,18 @@ class JsonApiMixin(object):
             renderer_context=renderer_context,
         )
 
-        resource_type = self.resource_type(
+        view = renderer_context.get("view", None)
+
+        model = self.get_model_from_view(view)
+
+        pk_field = encoding.force_text(model._meta.pk.name).encode("utf-8")
+
+        if hasattr(data, "__iter__"):
+            for item in data:
+                if pk_field in item:
+                    item[pk_field] = encoding.force_text(item[pk_field])
+
+        resource_type = self.get_resource_type(
             data=data,
             renderer_context=renderer_context,
         )

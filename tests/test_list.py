@@ -1,5 +1,5 @@
-from tests import models
 from django.core.urlresolvers import reverse
+from tests import models
 import json
 import pytest
 
@@ -15,13 +15,14 @@ def test_empty_list(client):
 
     assert response.content == json.dumps(results)
 
+
 def test_single_item_list(client):
     models.Person.objects.create(name="test")
 
     results = {
         "people": [
             {
-                "id": 1,
+                "id": "1",
                 "name": "test",
             },
         ]
@@ -31,6 +32,7 @@ def test_single_item_list(client):
 
     assert response.content == json.dumps(results)
 
+
 def test_multiple_item_list(client):
     models.Person.objects.create(name="test")
     models.Person.objects.create(name="other")
@@ -38,11 +40,11 @@ def test_multiple_item_list(client):
     results = {
         "people": [
             {
-                "id": 1,
+                "id": "1",
                 "name": "test",
             },
             {
-                "id": 2,
+                "id": "2",
                 "name": "other",
             },
         ]

@@ -158,7 +158,7 @@ class JsonApiMixin(object):
         if data:
             data = self.remap_url_field(data)
 
-            for field_name, field in fields.iteritems():
+            for field_name, field in six.iteritems(fields):
                 if isinstance(field, relations.PrimaryKeyRelatedField):
                     data = self.stringify_field_data(data, field_name)
 

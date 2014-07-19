@@ -151,7 +151,7 @@ class JsonApiMixin(object):
 
         model = self.get_model_from_view(view)
 
-        pk_field = encoding.force_text(model._meta.pk.name).encode("utf-8")
+        pk_field = encoding.force_text(model._meta.pk.name)
 
         data = self.stringify_field_data(data, pk_field)
 

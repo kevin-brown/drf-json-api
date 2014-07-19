@@ -8,7 +8,7 @@ pytestmark = pytest.mark.django_db
 
 def test_single_links(client):
     author = models.Person.objects.create(name="test")
-    post = models.Post.objects.create(author=author, title="Rails is Omakase")
+    post = models.Post.objects.create(author=author, title="Test post title.")
     models.Comment.objects.create(post=post, body="Some text for testing.")
 
     results =  {
@@ -37,7 +37,7 @@ def test_single_links(client):
 
 def test_multiple_links(client):
     author = models.Person.objects.create(name="test")
-    post = models.Post.objects.create(author=author, title="Rails is Omakase")
+    post = models.Post.objects.create(author=author, title="Test post title")
     models.Comment.objects.create(post=post, body="Test comment one.")
     models.Comment.objects.create(post=post, body="Test comment two.")
 
@@ -55,7 +55,7 @@ def test_multiple_links(client):
         "posts": [
             {
                 "id": "1",
-                "title": "Rails is Omakase",
+                "title": "Test post title",
                 "href": "http://testserver/posts/1/",
                 "links": {
                     "author": "1",

@@ -3,4 +3,4 @@ import json
 
 
 def dump_json(data):
-    return force_bytes(json.dumps(data, sort_keys=True))
+    return force_bytes(json.dumps(data, sort_keys=True, indent=4))

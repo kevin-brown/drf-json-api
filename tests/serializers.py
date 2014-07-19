@@ -21,3 +21,7 @@ class PostSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         fields = ("id", "url", "title", "author", "comments", )
         model = models.Post
+
+
+class NestedPostSerializer(PostSerializer):
+    comments = CommentSerializer(many=True)

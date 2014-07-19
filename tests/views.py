@@ -16,3 +16,7 @@ class PersonViewSet(viewsets.ModelViewSet):
 class PostViewSet(viewsets.ModelViewSet):
     model = models.Post
     serializer_class = serializers.PostSerializer
+
+
+class NestedPostViewSet(PostViewSet):
+    serializer_class = serializers.NestedPostSerializer

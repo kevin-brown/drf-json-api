@@ -7,7 +7,7 @@ python:
   - "3.4"
 
 script:
-  - "py.test"
+  - "py.test -vv"
 
 notifications:
   email: false

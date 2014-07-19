@@ -1,6 +1,6 @@
 from django.core.urlresolvers import reverse
 from tests import models
-import json
+from tests.utils import dump_json
 import pytest
 
 pytestmark = pytest.mark.django_db
@@ -13,7 +13,7 @@ def test_empty_list(client):
 
     response = client.get(reverse("post-list"))
 
-    assert response.content == json.dumps(results)
+    assert response.content == dump_json(results)
 
 
 def test_single_item_list(client):
@@ -31,7 +31,7 @@ def test_single_item_list(client):
 
     response = client.get(reverse("person-list"))
 
-    assert response.content == json.dumps(results)
+    assert response.content == dump_json(results)
 
 
 def test_multiple_item_list(client):
@@ -55,4 +55,4 @@ def test_multiple_item_list(client):
 
     response = client.get(reverse("person-list"))
 
-    assert response.content == json.dumps(results)
+    assert response.content == dump_json(results)

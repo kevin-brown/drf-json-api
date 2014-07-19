@@ -1,6 +1,6 @@
 from django.core.urlresolvers import reverse
 from tests import models
-import json
+from tests.utils import dump_json
 import pytest
 
 pytestmark = pytest.mark.django_db
@@ -32,7 +32,7 @@ def test_single_links(client):
 
     response = client.get(reverse("comment-list"))
 
-    assert response.content == json.dumps(results, sort_keys=True)
+    assert response.content == dump_json(results)
 
 
 def test_multiple_links(client):
@@ -67,4 +67,4 @@ def test_multiple_links(client):
 
     response = client.get(reverse("post-list"))
 
-    assert response.content == json.dumps(results, sort_keys=True)
+    assert response.content == dump_json(results)

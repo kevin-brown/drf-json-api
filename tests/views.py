@@ -24,3 +24,7 @@ class NestedCommentViewSet(CommentViewSet):
 
 class NestedPostViewSet(PostViewSet):
     serializer_class = serializers.NestedPostSerializer
+
+
+class PkCommentViewSet(CommentViewSet):
+    serializer_class = serializers.PkCommentSerializer

@@ -40,3 +40,7 @@ class NestedCommentSerializer(CommentSerializer):
 
 class NestedPostSerializer(PostSerializer):
     comments = MinimalCommentSerializer(many=True)
+
+
+class PkCommentSerializer(CommentSerializer):
+    post = relations.PrimaryKeyRelatedField()

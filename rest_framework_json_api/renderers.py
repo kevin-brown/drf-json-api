@@ -4,6 +4,8 @@ from django.utils import encoding, six
 
 
 def convert_resource(resource, request):
+    from rest_framework.settings import api_settings
+
     links = {}
     linked = {}
     data = resource.copy()
@@ -13,11 +15,19 @@ def convert_resource(resource, request):
     if "id" in fields:
         data["id"] = encoding.force_text(data["id"])
 
-    if "url" in fields:
-        data["href"] = data["url"]
-        del data["url"]
+    url_field_name = api_settings.URL_FIELD_NAME
+
+    if url_field_name in fields:
+        data["href"] = data[url_field_name]
+        del data[url_field_name]
 
     for field_name, field in six.iteritems(fields):
+        if isinstance(field, relations.PrimaryKeyRelatedField):
+            data, field_links, field_linked = handle_related_field(data, field, field_name, request)
+
+            links.update(field_links)
+            linked.update(field_linked)
+
         if isinstance(field, relations.HyperlinkedRelatedField):
             data, field_links, field_linked = handle_url_field(data, field, field_name, request)
 
@@ -43,7 +53,8 @@ def prepend_links_with_name(links, name):
 
         updated_obj = changed_links[link_name]
 
-        updated_obj["href"] = link_obj["href"].replace(link_template, prepended_template)
+        if "href" in link_obj:
+            updated_obj["href"] = link_obj["href"].replace(link_template, prepended_template)
 
         changed_links[prepended_name] = changed_links[link_name]
         del changed_links[link_name]
@@ -112,6 +123,28 @@ def handle_nested_serializer(resource, field, field_name, request):
 
         data["links"][field_name] = linked_obj["id"]
 
+        del data[field_name]
+
+    return data, links, linked
+
+
+def handle_related_field(resource, field, field_name, request):
+    links = {}
+    linked = {}
+    data = resource.copy()
+
+    model = model_from_obj(field)
+    resource_type = model_to_resource_type(model)
+
+    if field_name in data:
+        if "links" not in data:
+            data["links"] = {}
+
+        links[field_name] = {
+            "type": resource_type,
+        }
+
+        data["links"][field_name] = encoding.force_text(data[field_name])
         del data[field_name]
 
     return data, links, linked

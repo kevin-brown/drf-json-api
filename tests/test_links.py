@@ -68,3 +68,31 @@ def test_multiple_links(client):
     response = client.get(reverse("post-list"))
 
     assert response.content == dump_json(results)
+
+
+def test_pk_related(client):
+    author = models.Person.objects.create(name="test")
+    post = models.Post.objects.create(author=author, title="Test post title.")
+    models.Comment.objects.create(post=post, body="Some text for testing.")
+
+    results =  {
+        "links": {
+            "comments.post": {
+                "type": "posts",
+            },
+        },
+        "comments": [
+            {
+                "id": "1",
+                "body": "Some text for testing.",
+                "href": "http://testserver/comments/1/",
+                "links": {
+                    "post": "1",
+                },
+            },
+        ],
+    }
+
+    response = client.get(reverse("pk-comment-list"))
+
+    assert response.content == dump_json(results)

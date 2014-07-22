@@ -6,7 +6,6 @@ import pytest
 pytestmark = pytest.mark.django_db
 
 
-
 def test_single_linked(client):
     author = models.Person.objects.create(name="test")
     post = models.Post.objects.create(author=author, title="One amazing test post.")

@@ -9,6 +9,13 @@ def renderer():
 
 
 @pytest.fixture()
+def parser():
+    from rest_framework_json_api import parsers
+
+    return parsers.JsonApiParser()
+
+
+@pytest.fixture()
 def PersonSerializer():
     from rest_framework import serializers
     from tests import models
@@ -79,5 +86,9 @@ def pytest_configure():
             "DEFAULT_RENDERER_CLASSES": (
                 "rest_framework_json_api.renderers.JsonApiRenderer",
             ),
+            "DEFAULT_PARSER_CLASSES": (
+                "rest_framework_json_api.parsers.JsonApiParser",
+            ),
+            "TEST_REQUEST_DEFAULT_FORMAT": "json",
         },
     )

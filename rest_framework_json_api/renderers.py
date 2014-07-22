@@ -1,5 +1,8 @@
 from rest_framework import relations, renderers, serializers
 from rest_framework_json_api import encoders
+from rest_framework_json_api.utils import (
+    model_from_obj, model_to_resource_type
+)
 from django.utils import encoding, six
 
 
@@ -202,27 +205,6 @@ def fields_from_resource(resource):
         return fields
 
     return None
-
-
-def model_from_obj(obj):
-    model = getattr(obj, "model", None)
-
-    if model is not None:
-        return model
-
-    queryset = getattr(obj, "queryset", None)
-
-    if queryset is not None:
-        return queryset.model
-
-    return None
-
-
-def model_to_resource_type(model):
-    if model is None:
-        return "data"
-
-    return encoding.force_text(model._meta.verbose_name_plural)
 
 
 class JsonApiMixin(object):

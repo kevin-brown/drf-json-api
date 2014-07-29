@@ -49,7 +49,7 @@ default renderer.
     REST_FRAMEWORK = {
         "DEFAULT_RENDERER_CLASSES": (
             "rest_framework_json_api.renderers.JsonApiRenderer",
-            "rest_framework.renderers.BrowseableAPIRenderer",
+            "rest_framework.renderers.BrowsableAPIRenderer",
             # Any other renderers
         ),
         "DEFAULT_PARSER_CLASSES": (

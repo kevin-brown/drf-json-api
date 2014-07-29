@@ -1,0 +1,9 @@
+wheel>=0.22
+check-manifest>=0.21
+pyroma>=1.6
+Pygments>=1.6
+mccabe>=0.2.1
+pyflakes>=0.8.1
+pep8>=1.5.7
+flake8>=2.2.2
+sphinx>=1.2.2

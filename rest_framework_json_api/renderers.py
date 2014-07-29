@@ -26,19 +26,22 @@ def convert_resource(resource, request):
 
     for field_name, field in six.iteritems(fields):
         if isinstance(field, relations.PrimaryKeyRelatedField):
-            data, field_links, field_linked = handle_related_field(data, field, field_name, request)
+            data, field_links, field_linked = handle_related_field(
+                data, field, field_name, request)
 
             links.update(field_links)
             linked.update(field_linked)
 
         if isinstance(field, relations.HyperlinkedRelatedField):
-            data, field_links, field_linked = handle_url_field(data, field, field_name, request)
+            data, field_links, field_linked = handle_url_field(
+                data, field, field_name, request)
 
             links.update(field_links)
             linked.update(field_linked)
 
         if isinstance(field, serializers.ModelSerializer):
-            data, field_links, field_linked = handle_nested_serializer(data, field, field_name, request)
+            data, field_links, field_linked = handle_nested_serializer(
+                data, field, field_name, request)
 
             links.update(field_links)
             linked.update(field_linked)
@@ -57,7 +60,8 @@ def prepend_links_with_name(links, name):
         updated_obj = changed_links[link_name]
 
         if "href" in link_obj:
-            updated_obj["href"] = link_obj["href"].replace(link_template, prepended_template)
+            updated_obj["href"] = link_obj["href"].replace(
+                link_template, prepended_template)
 
         changed_links[prepended_name] = changed_links[link_name]
         del changed_links[link_name]
@@ -78,15 +82,18 @@ def handle_nested_serializer(resource, field, field_name, request):
         obj_ids = []
 
         for item in data[field_name]:
-            linked_obj, field_links, field_linked = convert_resource(item, request)
+            linked_obj, field_links, field_linked = convert_resource(
+                item, request)
 
             obj_ids.append(linked_obj["id"])
 
-            field_links = prepend_links_with_name(field_links, resource_type)
+            field_links = prepend_links_with_name(
+                field_links, resource_type)
 
             if hasattr(field.opts, "view_name"):
                 field_links[field_name] = {
-                    "href": url_to_template(field.opts.view_name, request, field_name),
+                    "href": url_to_template(
+                        field.opts.view_name, request, field_name),
                     "type": resource_type,
                 }
 
@@ -110,7 +117,8 @@ def handle_nested_serializer(resource, field, field_name, request):
 
         if hasattr(field.opts, "view_name"):
             field_links[field_name] = {
-                "href": url_to_template(field.opts.view_name, request, field_name),
+                "href": url_to_template(
+                    field.opts.view_name, request, field_name),
                 "type": resource_type,
             }
 
@@ -184,6 +192,7 @@ def url_to_pk(url_data, field):
     obj = field.from_native(url_data)
     return encoding.force_text(obj.pk)
 
+
 def url_to_template(view_name, request, template_name):
     from rest_framework.reverse import reverse
 
@@ -194,9 +203,11 @@ def url_to_template(view_name, request, template_name):
     }
     test_reverse = reverse(view_name, kwargs=test_kwargs, request=request)
 
-    href = test_reverse.replace(encoding.force_text(test_pk), "{%s}" % template_name)
+    href = test_reverse.replace(
+        encoding.force_text(test_pk), "{%s}" % template_name)
 
     return href
+
 
 def fields_from_resource(resource):
     fields = getattr(resource, "fields", None)

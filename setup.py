@@ -13,8 +13,10 @@ if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
     sys.exit()
 
+
 class PyTest(Command):
     user_options = []
+
     def initialize_options(self):
         pass
 
@@ -22,7 +24,8 @@ class PyTest(Command):
         pass
 
     def run(self):
-        import sys,subprocess
+        import sys
+        import subprocess
         errno = subprocess.call([sys.executable, 'runtests.py'])
         raise SystemExit(errno)
 
@@ -37,7 +40,9 @@ history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 setup(
     name='drf-json-api',
     version='0.1.0',
-    description='A parser and renderer for Django REST Framework that adds support for the JSON API specification.',
+    description=(
+        'A parser and renderer for Django REST Framework that adds support'
+        ' for the JSON API specification.'),
     long_description=readme + '\n\n' + doclink + '\n\n' + history,
     author='Kevin Brown',
     author_email='kbrown@rediker.com',

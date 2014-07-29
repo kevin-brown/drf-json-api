@@ -15,14 +15,15 @@ class JsonApiMixin(object):
         model = model_from_obj(view)
         resource_type = model_to_resource_type(model)
 
-        links = {}
-        linked = {}
+        # links = {}
+        # linked = {}
         resource = {}
 
         if resource_type in data:
             resource = data[resource_type]
 
         return resource
+
 
 class JsonApiParser(JsonApiMixin, parsers.JSONParser):
     pass

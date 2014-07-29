@@ -1,8 +1,5 @@
 from django.core.urlresolvers import reverse
-from io import BytesIO
 from rest_framework.test import APITestCase
-from tests import models
-from tests.utils import dump_json
 import pytest
 
 pytestmark = pytest.mark.django_db

@@ -11,7 +11,7 @@ def test_single_links(client):
     post = models.Post.objects.create(author=author, title="Test post title.")
     models.Comment.objects.create(post=post, body="Some text for testing.")
 
-    results =  {
+    results = {
         "links": {
             "comments.post": {
                 "href": "http://testserver/posts/{comments.post}/",
@@ -41,7 +41,7 @@ def test_multiple_links(client):
     models.Comment.objects.create(post=post, body="Test comment one.")
     models.Comment.objects.create(post=post, body="Test comment two.")
 
-    results =  {
+    results = {
         "links": {
             "posts.author": {
                 "href": "http://testserver/people/{posts.author}/",
@@ -75,7 +75,7 @@ def test_pk_related(client):
     post = models.Post.objects.create(author=author, title="Test post title.")
     models.Comment.objects.create(post=post, body="Some text for testing.")
 
-    results =  {
+    results = {
         "links": {
             "comments.post": {
                 "type": "posts",

@@ -48,11 +48,14 @@ default renderer.
     # ...
     REST_FRAMEWORK = {
         "DEFAULT_RENDERER_CLASSES": (
-            "rest_framework_json_api.renderers.CamelCaseJSONRenderer",
+            "rest_framework_json_api.renderers.JsonApiRenderer",
+            "rest_framework.renderers.BrowseableAPIRenderer",
             # Any other renderers
         ),
         "DEFAULT_PARSER_CLASSES": (
-            "rest_framework_json_api.parsers.CamelCaseJSONParser",
+            "rest_framework_json_api.parsers.JsonApiParser",
+            "rest_framework.parsers.FormParser",
+            "rest_framework.parsers.MultiPartParser",
             # Any other parsers
         ),
     }

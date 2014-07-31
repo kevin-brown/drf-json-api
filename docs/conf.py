@@ -244,7 +244,7 @@ man_pages = [
 texinfo_documents = [
     ('index', 'drf-json-api',
      u'Django REST Framework - JSON API Documentation',
-     u'Kevin Brown', 'drf-json-api', 'One line description of project.',
+     u'Kevin Brown', 'drf-json-api', 'JSON API support for Django REST Framework.',
      'Miscellaneous'),
 ]
 

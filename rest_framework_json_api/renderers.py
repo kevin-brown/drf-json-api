@@ -223,8 +223,17 @@ class JsonApiMixin(object):
     media_type = 'application/vnd.api+json'
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        wrapper = {}
+        response = renderer_context.get("response", None)
+        status_code = response and response.status_code
+        if status_code == 400:
+            return self.render_bad_request(
+                data, accepted_media_type, renderer_context)
+        else:
+            return self.render_default(
+                data, accepted_media_type, renderer_context)
 
+    def render_default(self, data, accepted_media_type, renderer_context):
+        wrapper = {}
         view = renderer_context.get("view", None)
         request = renderer_context.get("request", None)
 
@@ -261,6 +270,41 @@ class JsonApiMixin(object):
 
         if linked:
             wrapper["linked"] = linked
+
+        renderer_context["indent"] = 4
+
+        return super(JsonApiMixin, self).render(
+            data=wrapper,
+            accepted_media_type=accepted_media_type,
+            renderer_context=renderer_context,
+        )
+
+    def render_bad_request(self, data, accepted_media_type, renderer_context):
+        """
+        Render a bad request using the JSON API Error format
+
+        A common cause of these errors is omitting a required parameter.  The
+        data for this error is a dictionary of field name and a list of
+        associated errors:
+
+        {
+            'name': ['This field is required']
+        }
+
+        This is translated into the JSON API Error format:
+        {
+            'errors': {
+                'fields': {
+                    'name': ['This field is required']
+                }
+            }
+        }
+        """
+        wrapper = {
+            'errors': {
+                'fields': data
+            }
+        }
 
         renderer_context["indent"] = 4
 

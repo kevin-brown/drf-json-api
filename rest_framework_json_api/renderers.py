@@ -288,21 +288,25 @@ class JsonApiMixin(object):
         associated errors:
 
         {
-            'name': ['This field is required']
+            "name": ["This field is required."]
         }
 
         This is translated into the JSON API Error format:
         {
-            'errors': {
-                'fields': {
-                    'name': ['This field is required']
-                }
+            "errors": {
+                "fields": {
+                    "name": ["This field is required."]
+                },
+                "status": "400"
             }
         }
         """
+        response = renderer_context.get("response", None)
+        status_code = response and response.status_code
         wrapper = {
-            'errors': {
-                'fields': data
+            "errors": {
+                "fields": data,
+                "status": str(status_code)
             }
         }
 

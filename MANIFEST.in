@@ -1,0 +1,11 @@
+include .travis.yml
+include tox.ini
+include LICENSE
+include Makefile
+include *.rst
+include *.py
+include requirements.*txt
+
+recursive-include tests *.py
+recursive-include docs *.bat *.py *.rst Makefile .keep
+recursive-exclude docs modules.rst rest_framework_json_api.rst

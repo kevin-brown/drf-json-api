@@ -45,3 +45,5 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+docs/modules.rst
+docs/rest_framework_json_api.rst

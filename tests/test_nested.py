@@ -8,8 +8,10 @@ pytestmark = pytest.mark.django_db
 
 def test_single_linked(client):
     author = models.Person.objects.create(name="test")
-    post = models.Post.objects.create(author=author, title="One amazing test post.")
-    models.Comment.objects.create(post=post, body="This is a test comment.")
+    post = models.Post.objects.create(
+        author=author, title="One amazing test post.")
+    models.Comment.objects.create(
+        post=post, body="This is a test comment.")
 
     results = {
         "comments": [
@@ -46,9 +48,12 @@ def test_single_linked(client):
 
 def test_multiple_linked(client):
     author = models.Person.objects.create(name="test")
-    post = models.Post.objects.create(author=author, title="One amazing test post.")
-    models.Comment.objects.create(post=post, body="This is a test comment.")
-    models.Comment.objects.create(post=post, body="One more comment.")
+    post = models.Post.objects.create(
+        author=author, title="One amazing test post.")
+    models.Comment.objects.create(
+        post=post, body="This is a test comment.")
+    models.Comment.objects.create(
+        post=post, body="One more comment.")
 
     results = {
         "posts": [

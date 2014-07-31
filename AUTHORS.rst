@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Kevin Brown <kbrown@rediker.com>
+* Kevin Brown <kevin@kevinbrown.in>
 
 Contributors
 ------------

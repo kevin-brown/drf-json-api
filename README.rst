@@ -12,8 +12,8 @@ Does this work?
 
 **This package is currently being actively developed**, but is not
 widely used in production. If you find any problems when using this
-package, please create a bug report at the [issue
-tracker][issue-tracker] so we can figure out how to fix it.
+package, please create a bug report at the `issue
+tracker <https://github.com/kevin-brown/drf-json-api/issues>`__ so we can figure out how to fix it.
 
 How do I use this?
 ------------------
@@ -121,7 +121,7 @@ expected to return lists, while detail endpoints are expected to return
 a single item that should be rendered. **This does not mean that no
 paginators can be used** with JSON API, only paginators which do not
 return metadata within the body of the response. Paginators which rely
-on headers, such as `the ``Link`` based
+on headers, such as `the Link header based
 paginator <https://github.com/kevin-brown/drf-link-pagination>`__ will
 typically work with the JSON API renderer.
 
@@ -154,7 +154,7 @@ JSON API specification.
 Pagination
 ~~~~~~~~~~
 
-The ```Link`` header based
+`The Link header based
 paginator <https://github.com/kevin-brown/drf-link-pagination>`__ will
 work with the renderer provided by this package as well as any
 paginators which only use the headers of a response.

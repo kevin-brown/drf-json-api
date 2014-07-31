@@ -22,7 +22,7 @@ Feedback
 ========
 
 If you have any suggestions or questions about **Django REST Framework - JSON API** feel free to email me
-at kbrown@rediker.com.
+at kevin@kevinbrown.in.
 
 If you encounter any errors or problems with **Django REST Framework - JSON API**, please let me know!
 Open an Issue at the GitHub https://github.com/kevin-brown/drf-json-api main repository.

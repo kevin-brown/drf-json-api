@@ -5,6 +5,7 @@ from rest_framework_json_api.utils import (
 
 
 class JsonApiMixin(object):
+    media_type = 'application/vnd.api+json'
 
     def parse(self, stream, media_type=None, parser_context=None):
         data = super(JsonApiMixin, self).parse(stream, media_type=media_type,

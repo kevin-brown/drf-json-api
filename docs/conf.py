@@ -25,8 +25,6 @@ parent = os.path.dirname(cwd)
 sys.path.insert(0, parent)
 
 import rest_framework_json_api
-from conftest import pytest_configure
-pytest_configure()
 
 # -- General configuration ----------------------------------------------------
 

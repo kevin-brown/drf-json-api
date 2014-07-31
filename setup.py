@@ -14,21 +14,6 @@ if sys.argv[-1] == 'publish':
     sys.exit()
 
 
-class PyTest(Command):
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import sys
-        import subprocess
-        errno = subprocess.call([sys.executable, 'runtests.py'])
-        raise SystemExit(errno)
-
 readme = open('README.rst').read()
 doclink = """
 Documentation
@@ -45,7 +30,7 @@ setup(
         ' for the JSON API specification.'),
     long_description=readme + '\n\n' + doclink + '\n\n' + history,
     author='Kevin Brown',
-    author_email='kbrown@rediker.com',
+    author_email='kevin@kevinbrown.in',
     url='https://github.com/kevin-brown/drf-json-api',
     packages=[
         'rest_framework_json_api',
@@ -55,7 +40,6 @@ setup(
     install_requires=[
     ],
     license='MIT',
-    cmdclass = {'test': PyTest},
     zip_safe=False,
     keywords='drf-json-api',
     classifiers=[

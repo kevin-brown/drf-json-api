@@ -61,6 +61,10 @@ default renderer.
     }
     #...
 
+This may break the API root view of the `Default Router
+<http://www.django-rest-framework.org/api-guide/routers#defaultrouter>`__, so
+you may want to instead apply it to your viewsets.
+
 What does this support?
 -----------------------
 

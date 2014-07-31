@@ -220,6 +220,7 @@ def fields_from_resource(resource):
 
 class JsonApiMixin(object):
     encoder_class = encoders.JSONEncoder
+    media_type = 'application/vnd.api+json'
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
         wrapper = {}

@@ -36,10 +36,11 @@ def test_create_failure(client):
     data_json_api = dump_json({"people": data})
     result_data = {"name": ["This field is required."]}
     results = {
-        "errors": {
-            "fields": result_data,
+        "errors": [{
+            "field": "name",
+            "detail": "This field is required.",
             "status": "400"
-        }
+        }]
     }
 
     response = client.post(

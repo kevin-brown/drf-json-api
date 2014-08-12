@@ -295,8 +295,8 @@ class JsonApiMixin(object):
         {
             "errors": [{
                 "status": "400"
-                "field": "name",
-                "detail": "This field is required."
+                "path": "/name",
+                "title": "This field is required."
             }]
         }
         """
@@ -305,10 +305,14 @@ class JsonApiMixin(object):
         errors = []
         for field, issues in data.items():
             for issue in issues:
+                if field == 'non_field_errors':
+                    path = '/-'
+                else:
+                    path = '/' + field
                 errors.append({
                     "status": status_code,
-                    "field": field,
-                    "detail": issue
+                    "path": path,
+                    "title": issue
                 })
 
         wrapper = {"errors": errors}

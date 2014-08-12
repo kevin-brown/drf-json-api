@@ -37,8 +37,8 @@ def test_create_failure(client):
     result_data = {"name": ["This field is required."]}
     results = {
         "errors": [{
-            "field": "name",
-            "detail": "This field is required.",
+            "path": "/name",
+            "title": "This field is required.",
             "status": "400"
         }]
     }

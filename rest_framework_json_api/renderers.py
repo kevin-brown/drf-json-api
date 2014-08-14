@@ -225,7 +225,7 @@ class JsonApiMixin(object):
     def render(self, data, accepted_media_type=None, renderer_context=None):
         response = renderer_context.get("response", None)
         status_code = response and response.status_code
-        if status_code == 400:
+        if status_code in (400, 403):
             return self.render_bad_request(
                 data, accepted_media_type, renderer_context)
         else:
@@ -294,21 +294,43 @@ class JsonApiMixin(object):
         This is translated into the JSON API Error format:
         {
             "errors": [{
-                "status": "400"
+                "status": "400",
                 "path": "/name",
                 "title": "This field is required."
+            }]
+        }
+
+        Authoriziation errors are 403 errors, and look like:
+
+        {
+            "detail": "Authentication credentials were not provided."
+        }
+
+        This is translated into:
+        {
+            "errors": [{
+                "status": "403",
+                "path": "/-",
+                "title": "Authentication credentials were not provided."
             }]
         }
         """
         response = renderer_context.get("response", None)
         status_code = str(response and response.status_code)
+
+        view = renderer_context.get("view", None)
+        model = model_from_obj(view)
+        field_names = model._meta.get_all_field_names()
+
         errors = []
         for field, issues in data.items():
+            if isinstance(issues, six.string_types):
+                issues = [issues]
             for issue in issues:
-                if field == 'non_field_errors':
-                    path = '/-'
-                else:
+                if field in field_names:
                     path = '/' + field
+                else:
+                    path = '/-'
                 errors.append({
                     "status": status_code,
                     "path": path,

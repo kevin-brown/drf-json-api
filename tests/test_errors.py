@@ -145,3 +145,24 @@ def test_invalid_reverse_relation(client):
         }]
     }
     assert response.content == dump_json(results)
+
+
+def test_bad_json(client):
+    data = "{'people': {'name': 'Jason Api'}}"  # Wrong quotes
+
+    response = client.post(
+        reverse("person-list"), data=data,
+        content_type="application/vnd.api+json")
+
+    assert response.status_code == 400, response.content
+    assert response['content-type'] == 'application/vnd.api+json'
+
+    results = {
+        "errors": [{
+            "status": "400",
+            "detail": (
+                "JSON parse error - Expecting property name enclosed in"
+                " double quotes: line 1 column 2 (char 1)"),
+        }]
+    }
+    assert response.content == dump_json(results)

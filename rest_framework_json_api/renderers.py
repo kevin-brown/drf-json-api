@@ -223,18 +223,37 @@ class JsonApiMixin(object):
     media_type = 'application/vnd.api+json'
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        """Convert native data to JSON API"""
+        """Convert native data to JSON API
+
+        JSON API has a different format for errors, but Django REST Framework
+        doesn't have a separate rendering path for errors.  This results in
+        some guesswork to determine if data is an error, what kind, and how
+        to handle it.
+
+        As of August 2014, there is not a consensus about the error format in
+        JSON API.  The format documentation defines an "errors" collection, and
+        some possible fields for that collection, but without examples for
+        common cases.  If and when consensus is reached, this format will
+        probably change.
+        """
         response = renderer_context.get("response", None)
         status_code = response and response.status_code
         is_error = (
             status.is_client_error(status_code) or
             status.is_server_error(status_code))
 
-        if is_error:
-            if status_code == 400:
-                wrapper = self.wrap_bad_request(data, renderer_context)
+        if status_code == 400 and data.keys() == ['detail']:
+            # Probably a parser error, but might be a field error
+            view = renderer_context.get("view", None)
+            model = model_from_obj(view)
+            if 'detail' in model._meta.get_all_field_names():
+                wrapper = self.wrap_field_error(data, renderer_context)
             else:
-                wrapper = self.wrap_generic_error(data, renderer_context)
+                wrapper = self.wrap_parser_error(data, renderer_context)
+        elif status_code == 400:
+            wrapper = self.wrap_field_error(data, renderer_context)
+        elif is_error:
+            wrapper = self.wrap_generic_error(data, renderer_context)
         else:
             wrapper = self.wrap_default(data, renderer_context)
 
@@ -287,17 +306,13 @@ class JsonApiMixin(object):
 
         return wrapper
 
-    def wrap_bad_request(self, data, renderer_context):
+    def wrap_field_error(self, data, renderer_context):
         """
-        Convert bad request native data to the JSON API Error format
+        Convert field error native data to the JSON API Error format
 
-        As of August 2014, there is not a consensus about the error format in
-        JSON API.  The format documentation defines an "errors" collection, and
-        some possible fields for that collection, but without examples for
-        common cases.  If and when consensus is reached, this format will
-        probably change.
+        See the note about the JSON API Error format on render.
 
-        The native format for bad requests is a dictionary where the keys are
+        The native format for field errors is a dictionary where the keys are
         field names (or 'non_field_errors' for additional errors) and the
         values are a list of error strings:
 
@@ -340,7 +355,7 @@ class JsonApiMixin(object):
         """
         Convert generic error native data using the JSON API Error format
 
-        See the note about the JSON API Error format on wrap_bad_request.
+        See the note about the JSON API Error format on render.
 
         The native format for errors that are not bad requests, such as
         authentication issues or missing content, is a dictionary with a
@@ -361,6 +376,21 @@ class JsonApiMixin(object):
         """
         return self.wrap_error(
             data, renderer_context, keys_are_fields=False, issue_is_title=True)
+
+    def wrap_parser_error(self, data, renderer_context):
+        """
+        Convert parser errors to the JSON API Error format
+
+        See the note about the JSON API Error format on render.
+
+        Parser errors have a status code of 400, like field errors, but have
+        the same native format as generic errors.  Also, the detail message is
+        often specific to the input, so the error is listed as a 'detail'
+        rather than a 'title'.
+        """
+        return self.wrap_error(
+            data, renderer_context, keys_are_fields=False,
+            issue_is_title=False)
 
     def wrap_error(
             self, data, renderer_context, keys_are_fields, issue_is_title):

@@ -7,48 +7,47 @@ from tests.utils import dump_json
 pytestmark = pytest.mark.django_db
 
 
-class TestData(APITestCase):
-
-    def test_test(self):
-        test_data = dump_json({
-            "people": {
-                "name": "test",
-            },
-        })
-
-        output_data = {
+def test_basic(client):
+    test_data = dump_json({
+        "people": {
             "name": "test",
-        }
+        },
+    })
 
-        response = self.client.put(
-            reverse("person-list"), data=test_data,
-            content_type="application/vnd.api+json")
+    output_data = {
+        "name": "test",
+    }
 
-        assert response.data == output_data
+    response = client.generic("echo",
+        reverse("person-list"), data=test_data,
+        content_type="application/vnd.api+json")
 
-    def test_multiple(self):
-        test_data = dump_json({
-            "people": [
-                {
-                    "name": "first",
-                },
-                {
-                    "name": "second",
-                },
-            ],
-        })
+    assert response.data == output_data
 
-        output_data = [
+
+def test_multiple(client):
+    test_data = dump_json({
+        "people": [
             {
                 "name": "first",
             },
             {
                 "name": "second",
             },
-        ]
+        ],
+    })
 
-        response = self.client.put(
-            reverse("person-list"), data=test_data,
-            content_type="application/vnd.api+json")
+    output_data = [
+        {
+            "name": "first",
+        },
+        {
+            "name": "second",
+        },
+    ]
 
-        assert response.data == output_data
+    response = client.generic("echo",
+        reverse("person-list"), data=test_data,
+        content_type="application/vnd.api+json")
+
+    assert response.data == output_data

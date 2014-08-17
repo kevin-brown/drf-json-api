@@ -6,13 +6,13 @@ from tests import serializers
 
 class EchoMixin(object):
     """
-    Returns the parsed data that was sent in the request when an ECHO request
+    Returns the parsed data that was sent in the request when a ECHO request
     is made to the view.
     """
 
     http_method_names = viewsets.ModelViewSet.http_method_names + ["echo"]
 
-    def put(self, request, *args, **kwargs):
+    def echo(self, request, *args, **kwargs):
         response = HttpResponse("echo")
         response.data = request.DATA
 

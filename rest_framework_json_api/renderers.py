@@ -1,4 +1,4 @@
-from rest_framework import relations, renderers, serializers
+from rest_framework import relations, renderers, serializers, status
 from rest_framework_json_api import encoders
 from rest_framework_json_api.utils import (
     model_from_obj, model_to_resource_type
@@ -223,8 +223,50 @@ class JsonApiMixin(object):
     media_type = 'application/vnd.api+json'
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        wrapper = {}
+        """Convert native data to JSON API
 
+        JSON API has a different format for errors, but Django REST Framework
+        doesn't have a separate rendering path for errors.  This results in
+        some guesswork to determine if data is an error, what kind, and how
+        to handle it.
+
+        As of August 2014, there is not a consensus about the error format in
+        JSON API.  The format documentation defines an "errors" collection, and
+        some possible fields for that collection, but without examples for
+        common cases.  If and when consensus is reached, this format will
+        probably change.
+        """
+        response = renderer_context.get("response", None)
+        status_code = response and response.status_code
+        is_error = (
+            status.is_client_error(status_code) or
+            status.is_server_error(status_code))
+
+        if status_code == 400 and list(data.keys()) == ['detail']:
+            # Probably a parser error, but might be a field error
+            view = renderer_context.get("view", None)
+            model = model_from_obj(view)
+            if 'detail' in model._meta.get_all_field_names():
+                wrapper = self.wrap_field_error(data, renderer_context)
+            else:
+                wrapper = self.wrap_parser_error(data, renderer_context)
+        elif status_code == 400:
+            wrapper = self.wrap_field_error(data, renderer_context)
+        elif is_error:
+            wrapper = self.wrap_generic_error(data, renderer_context)
+        else:
+            wrapper = self.wrap_default(data, renderer_context)
+
+        renderer_context["indent"] = 4
+        return super(JsonApiMixin, self).render(
+            data=wrapper,
+            accepted_media_type=accepted_media_type,
+            renderer_context=renderer_context,
+        )
+
+    def wrap_default(self, data, renderer_context):
+        """Convert native data to a JSON API resource collection"""
+        wrapper = {}
         view = renderer_context.get("view", None)
         request = renderer_context.get("request", None)
 
@@ -262,13 +304,121 @@ class JsonApiMixin(object):
         if linked:
             wrapper["linked"] = linked
 
-        renderer_context["indent"] = 4
+        return wrapper
 
-        return super(JsonApiMixin, self).render(
-            data=wrapper,
-            accepted_media_type=accepted_media_type,
-            renderer_context=renderer_context,
-        )
+    def wrap_field_error(self, data, renderer_context):
+        """
+        Convert field error native data to the JSON API Error format
+
+        See the note about the JSON API Error format on render.
+
+        The native format for field errors is a dictionary where the keys are
+        field names (or 'non_field_errors' for additional errors) and the
+        values are a list of error strings:
+
+        {
+            "min": [
+                "min must be greater than 0.",
+                "min must be an even number."
+            ],
+            "max": ["max must be a positive number."],
+            "non_field_errors": [
+                "Select either a range or an enumeration, not both."]
+        }
+
+        It is rendered into this JSON API error format:
+
+        {
+            "errors": [{
+                "status": "400",
+                "path": "/min",
+                "detail": "min must be greater than 0."
+            },{
+                "status": "400",
+                "path": "/min",
+                "detail": "min must be an even number."
+            },{
+                "status": "400",
+                "path": "/max",
+                "detail": "max must be a positive number."
+            },{
+                "status": "400",
+                "path": "/-",
+                "detail": "Select either a range or an enumeration, not both."
+            }]
+        }
+        """
+        return self.wrap_error(
+            data, renderer_context, keys_are_fields=True, issue_is_title=False)
+
+    def wrap_generic_error(self, data, renderer_context):
+        """
+        Convert generic error native data using the JSON API Error format
+
+        See the note about the JSON API Error format on render.
+
+        The native format for errors that are not bad requests, such as
+        authentication issues or missing content, is a dictionary with a
+        'detail' key and a string value:
+
+        {
+            "detail": "Authentication credentials were not provided."
+        }
+
+        This is rendered into this JSON API error format:
+
+        {
+            "errors": [{
+                "status": "403",
+                "title": "Authentication credentials were not provided"
+            }]
+        }
+        """
+        return self.wrap_error(
+            data, renderer_context, keys_are_fields=False, issue_is_title=True)
+
+    def wrap_parser_error(self, data, renderer_context):
+        """
+        Convert parser errors to the JSON API Error format
+
+        See the note about the JSON API Error format on render.
+
+        Parser errors have a status code of 400, like field errors, but have
+        the same native format as generic errors.  Also, the detail message is
+        often specific to the input, so the error is listed as a 'detail'
+        rather than a 'title'.
+        """
+        return self.wrap_error(
+            data, renderer_context, keys_are_fields=False,
+            issue_is_title=False)
+
+    def wrap_error(
+            self, data, renderer_context, keys_are_fields, issue_is_title):
+        """Convert error native data to the JSON API Error format"""
+
+        response = renderer_context.get("response", None)
+        status_code = str(response and response.status_code)
+
+        errors = []
+        for field, issues in data.items():
+            if isinstance(issues, six.string_types):
+                issues = [issues]
+            for issue in issues:
+                error = {"status": status_code}
+
+                if issue_is_title:
+                    error["title"] = issue
+                else:
+                    error["detail"] = issue
+
+                if keys_are_fields:
+                    if field == 'non_field_errors':
+                        error["path"] = '/-'
+                    else:
+                        error["path"] = '/' + field
+
+                errors.append(error)
+        return {"errors": errors}
 
 
 class JsonApiRenderer(JsonApiMixin, renderers.JSONRenderer):

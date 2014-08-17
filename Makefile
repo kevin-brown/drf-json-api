@@ -33,8 +33,7 @@ test-all:
 	tox
 
 coverage:
-	coverage run --source rest_framework_json_api setup.py test
-	coverage report -m
+	py.test --cov rest_framework_json_api tests/
 	coverage html
 	open htmlcov/index.html
 

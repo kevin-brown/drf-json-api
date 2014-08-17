@@ -69,7 +69,7 @@ What does this support?
 -----------------------
 
 The JSON API renderer supports all features of hyperlinked serializers
-and will normalize attributes such as the ```url``
+and will normalize attributes such as the `url
 field <http://www.django-rest-framework.org/api-guide/settings#url_field_name>`__
 to match the JSON API specification.
 

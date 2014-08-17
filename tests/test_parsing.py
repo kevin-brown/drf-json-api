@@ -48,6 +48,30 @@ def test_multiple(client):
 
     response = client.generic("echo",
         reverse("person-list"), data=test_data,
-        content_type="application/vnd.api+json")
+        content_type="application/vnd.api+json",
+    )
+
+    assert response.data == output_data
+
+
+def test_single_link(client):
+    test_data = dump_json({
+        "comments": {
+            "body": "This is a test comment.",
+            "links": {
+                "post": "1",
+            }
+        },
+    })
+
+    output_data = {
+        "body": "This is a test comment.",
+        "post": "http://testserver/posts/1/",
+    }
+
+    response = client.generic("echo",
+        reverse("comment-list"), data=test_data,
+        content_type="application/vnd.api+json",
+    )
 
     assert response.data == output_data

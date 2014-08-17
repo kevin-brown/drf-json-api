@@ -242,7 +242,7 @@ class JsonApiMixin(object):
             status.is_client_error(status_code) or
             status.is_server_error(status_code))
 
-        if status_code == 400 and data.keys() == ['detail']:
+        if status_code == 400 and list(data.keys()) == ['detail']:
             # Probably a parser error, but might be a field error
             view = renderer_context.get("view", None)
             model = model_from_obj(view)

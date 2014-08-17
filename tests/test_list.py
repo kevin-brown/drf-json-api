@@ -92,20 +92,12 @@ def test_create_person_success(client):
 def test_create_post_success(client):
     author = models.Person.objects.create(name="The Author")
 
-    # Should author be under links?
-    # data = dump_json({
-    #     "posts": {
-    #         "title": "This is the title",
-    #         "links": {
-    #             "author": author.pk,
-    #         },
-    #     }
-    # })
-    # Current presentation
     data = dump_json({
         "posts": {
             "title": "This is the title",
-            "author": "http://testserver/people/1/",
+            "links": {
+                "author": author.pk,
+            },
         }
     })
 

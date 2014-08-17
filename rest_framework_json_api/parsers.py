@@ -21,14 +21,26 @@ def convert_resource(resource, view):
             if field_name not in links:
                 continue
 
-            pk = links[field_name]
-            model = field.queryset.model
+            if field.many:
+                pks = links[field_name]
+                model = field.queryset.model
 
-            obj = model(pk=pk)
+                resource[field_name] = []
 
-            url = field.to_native(obj)
+                for pk in pks:
+                    obj = model(pk=pk)
+                    url = field.to_native(obj)
 
-            resource[field_name] = url
+                    resource[field_name].append(url)
+            else:
+                pk = links[field_name]
+                model = field.queryset.model
+
+                obj = model(pk=pk)
+
+                url = field.to_native(obj)
+
+                resource[field_name] = url
 
     return resource
 

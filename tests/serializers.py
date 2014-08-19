@@ -23,6 +23,12 @@ class PostSerializer(serializers.HyperlinkedModelSerializer):
         model = models.Post
 
 
+class MaximalPersonSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        fields = ("id", "url", "name", "favorite_post")
+        model = models.Person
+
+
 class MinimalCommentSerializer(CommentSerializer):
 
     class Meta(CommentSerializer.Meta):

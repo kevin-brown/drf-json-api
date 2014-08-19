@@ -189,8 +189,11 @@ def url_to_pk(url_data, field):
         obj_list = [field.from_native(url) for url in url_data]
         return [encoding.force_text(obj.pk) for obj in obj_list]
 
-    obj = field.from_native(url_data)
-    return encoding.force_text(obj.pk)
+    if url_data:
+        obj = field.from_native(url_data)
+        return encoding.force_text(obj.pk)
+    else:
+        return None
 
 
 def url_to_template(view_name, request, template_name):

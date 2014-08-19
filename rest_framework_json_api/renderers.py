@@ -155,7 +155,14 @@ def handle_related_field(resource, field, field_name, request):
             "type": resource_type,
         }
 
-        data["links"][field_name] = encoding.force_text(data[field_name])
+        if field.many:
+            link_data = [encoding.force_text(pk) for pk in data[field_name]]
+        elif data[field_name]:
+            link_data = encoding.force_text(data[field_name])
+        else:
+            link_data = None
+
+        data["links"][field_name] = link_data
         del data[field_name]
 
     return data, links, linked

@@ -17,9 +17,9 @@ def convert_resource(resource, view):
         del resource["links"]
 
     for field_name, field in six.iteritems(fields):
+        if field_name not in links:
+            continue
         if isinstance(field, relations.HyperlinkedRelatedField):
-            if field_name not in links:
-                continue
 
             if field.many:
                 pks = links[field_name]
@@ -41,6 +41,8 @@ def convert_resource(resource, view):
                 url = field.to_native(obj)
 
                 resource[field_name] = url
+        else:
+            resource[field_name] = links[field_name]
 
     return resource
 

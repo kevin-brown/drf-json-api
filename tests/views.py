@@ -49,3 +49,8 @@ class NestedPostViewSet(PostViewSet):
 
 class PkCommentViewSet(CommentViewSet):
     serializer_class = serializers.PkCommentSerializer
+
+
+class PkMaximalPersonViewSet(viewsets.ModelViewSet):
+    model = models.Person
+    serializer_class = serializers.PkMaximalPersonSerializer

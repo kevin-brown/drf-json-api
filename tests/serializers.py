@@ -23,6 +23,12 @@ class PostSerializer(serializers.HyperlinkedModelSerializer):
         model = models.Post
 
 
+class MaximalPersonSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        fields = ("id", "url", "name", "favorite_post", "liked_comments")
+        model = models.Person
+
+
 class MinimalCommentSerializer(CommentSerializer):
 
     class Meta(CommentSerializer.Meta):
@@ -45,3 +51,8 @@ class NestedPostSerializer(PostSerializer):
 
 class PkCommentSerializer(CommentSerializer):
     post = relations.PrimaryKeyRelatedField()
+
+
+class PkMaximalPersonSerializer(MaximalPersonSerializer):
+    favorite_post = relations.PrimaryKeyRelatedField(null=True)
+    liked_comments = relations.PrimaryKeyRelatedField(many=True)

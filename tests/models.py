@@ -4,6 +4,13 @@ from django.db import models
 class Person(models.Model):
     name = models.CharField(max_length=50)
 
+    # Nullable ForeignKey
+    favorite_post = models.ForeignKey(
+        "Post", blank=True, null=True, related_name="favorited_by")
+
+    # To-Many Forward Relation
+    liked_comments = models.ManyToManyField("Comment", related_name="liked_by")
+
     class Meta:
         verbose_name_plural = "people"
 

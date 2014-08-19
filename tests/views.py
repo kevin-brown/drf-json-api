@@ -34,6 +34,11 @@ class PostViewSet(EchoMixin, viewsets.ModelViewSet):
     serializer_class = serializers.PostSerializer
 
 
+class MaximalPersonViewSet(viewsets.ModelViewSet):
+    model = models.Person
+    serializer_class = serializers.MaximalPersonSerializer
+
+
 class NestedCommentViewSet(CommentViewSet):
     serializer_class = serializers.NestedCommentSerializer
 
@@ -44,3 +49,8 @@ class NestedPostViewSet(PostViewSet):
 
 class PkCommentViewSet(CommentViewSet):
     serializer_class = serializers.PkCommentSerializer
+
+
+class PkMaximalPersonViewSet(viewsets.ModelViewSet):
+    model = models.Person
+    serializer_class = serializers.PkMaximalPersonSerializer

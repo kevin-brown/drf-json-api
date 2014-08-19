@@ -155,7 +155,14 @@ def handle_related_field(resource, field, field_name, request):
             "type": resource_type,
         }
 
-        data["links"][field_name] = encoding.force_text(data[field_name])
+        if field.many:
+            link_data = [encoding.force_text(pk) for pk in data[field_name]]
+        elif data[field_name]:
+            link_data = encoding.force_text(data[field_name])
+        else:
+            link_data = None
+
+        data["links"][field_name] = link_data
         del data[field_name]
 
     return data, links, linked
@@ -189,8 +196,11 @@ def url_to_pk(url_data, field):
         obj_list = [field.from_native(url) for url in url_data]
         return [encoding.force_text(obj.pk) for obj in obj_list]
 
-    obj = field.from_native(url_data)
-    return encoding.force_text(obj.pk)
+    if url_data:
+        obj = field.from_native(url_data)
+        return encoding.force_text(obj.pk)
+    else:
+        return None
 
 
 def url_to_template(view_name, request, template_name):

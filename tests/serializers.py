@@ -25,7 +25,7 @@ class PostSerializer(serializers.HyperlinkedModelSerializer):
 
 class MaximalPersonSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        fields = ("id", "url", "name", "favorite_post")
+        fields = ("id", "url", "name", "favorite_post", "liked_comments")
         model = models.Person
 
 

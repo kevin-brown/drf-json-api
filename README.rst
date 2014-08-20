@@ -159,5 +159,13 @@ paginator <https://github.com/kevin-brown/drf-link-pagination>`__ will
 work with the renderer provided by this package as well as any
 paginators which only use the headers of a response.
 
+JSON Patch
+~~~~~~~~~~
+
+JSON API recommends using JSON Patch for `PATCH` requests, and allowing partial
+updates through the `PUT` HTTP method.  JSON Patch support is available for
+Django REST Framework through a `third party package
+<https://github.com/kevin-brown/drf-json-patch`__ and should be compatible.
+
 .. |Build Status| image:: https://travis-ci.org/kevin-brown/drf-json-api.svg?branch=master
    :target: https://travis-ci.org/kevin-brown/drf-json-api

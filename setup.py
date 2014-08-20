@@ -1,17 +1,11 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-import os
-import sys
 
 try:
-    from setuptools import setup, Command
+    from setuptools import setup
 except ImportError:
-    from distutils.core import setup, Command
-
-
-if sys.argv[-1] == 'publish':
-    os.system('python setup.py sdist upload')
-    sys.exit()
+    from distutils.core import setup
 
 
 readme = open('README.rst').read()
@@ -37,8 +31,7 @@ setup(
     ],
     package_dir={'rest_framework_json_api': 'rest_framework_json_api'},
     include_package_data=True,
-    install_requires=[
-    ],
+    install_requires=[],
     license='MIT',
     zip_safe=False,
     keywords='drf-json-api',

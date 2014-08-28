@@ -246,11 +246,22 @@ class JsonApiMixin(object):
         common cases.  If and when consensus is reached, this format will
         probably change.
         """
+
+        if data is None:
+            return super(JsonApiMixin, self).render(
+                data=data,
+                accepted_media_type=accepted_media_type,
+                renderer_context=renderer_context,
+            )
+
         response = renderer_context.get("response", None)
+
         status_code = response and response.status_code
+
         is_error = (
             status.is_client_error(status_code) or
-            status.is_server_error(status_code))
+            status.is_server_error(status_code)
+        )
 
         if status_code == 400 and list(data.keys()) == ['detail']:
             # Probably a parser error, but might be a field error
@@ -268,6 +279,7 @@ class JsonApiMixin(object):
             wrapper = self.wrap_default(data, renderer_context)
 
         renderer_context["indent"] = 4
+
         return super(JsonApiMixin, self).render(
             data=wrapper,
             accepted_media_type=accepted_media_type,

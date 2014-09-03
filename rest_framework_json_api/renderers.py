@@ -254,6 +254,7 @@ class JsonApiMixin(object):
                 renderer_context=renderer_context,
             )
 
+        request = renderer_context.get("request", None)
         response = renderer_context.get("response", None)
 
         status_code = response and response.status_code
@@ -275,6 +276,8 @@ class JsonApiMixin(object):
             wrapper = self.wrap_field_error(data, renderer_context)
         elif is_error:
             wrapper = self.wrap_generic_error(data, renderer_context)
+        elif request and request.method == 'OPTIONS':
+            wrapper = self.wrap_options(data, renderer_context)
         else:
             wrapper = self.wrap_default(data, renderer_context)
 
@@ -441,6 +444,10 @@ class JsonApiMixin(object):
 
                 errors.append(error)
         return {"errors": errors}
+
+    def wrap_options(self, data, renderer_context):
+        '''Wrap OPTIONS data as JSON API meta value'''
+        return {"meta": data}
 
 
 class JsonApiRenderer(JsonApiMixin, renderers.JSONRenderer):

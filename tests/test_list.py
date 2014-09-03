@@ -130,3 +130,50 @@ def test_create_post_success(client):
         },
     }
     assert response.content == dump_json(results)
+
+
+def test_options(client):
+    results = {
+        "meta": {
+            "actions": {
+                "POST": {
+                    "author": {
+                        "label": "author",
+                        "read_only": False,
+                        "required": True,
+                        "type": "field"
+                    },
+                    "comments": {
+                        "read_only": False,
+                        "required": True,
+                        "type": "field"
+                    },
+                    "id": {
+                        "label": "ID",
+                        "read_only": True,
+                        "required": False,
+                        "type": "integer"
+                    },
+                    "title": {
+                        "label": "title",
+                        "max_length": 100,
+                        "read_only": False,
+                        "required": True,
+                        "type": "string"
+                    },
+                    "url": {
+                        "read_only": True,
+                        "required": False,
+                        "type": "field"
+                    }
+                }
+            },
+            "description": "",
+            "name": "Post List",
+            "parses": ["application/vnd.api+json"],
+            "renders": ["application/vnd.api+json"],
+        }
+    }
+    response = client.options(reverse("post-list"))
+    assert response.status_code == 200
+    assert response.content == dump_json(results)

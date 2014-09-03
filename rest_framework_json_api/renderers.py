@@ -83,7 +83,7 @@ class JsonApiMixin(object):
 
         # Probably a parser error, unless `detail` is a valid field
         view = renderer_context.get("view", None)
-        model = model_from_obj(view)
+        model = self.model_from_obj(view)
         if 'detail' in model._meta.get_all_field_names():
             raise WrapperNotApplicable()
 
@@ -241,8 +241,8 @@ class JsonApiMixin(object):
         view = renderer_context.get("view", None)
         request = renderer_context.get("request", None)
 
-        model = model_from_obj(view)
-        resource_type = model_to_resource_type(model)
+        model = self.model_from_obj(view)
+        resource_type = self.model_to_resource_type(model)
 
         if isinstance(data, list):
             links = self.dict_class()
@@ -343,7 +343,7 @@ class JsonApiMixin(object):
 
         model = field.opts.model
 
-        resource_type = model_to_resource_type(model)
+        resource_type = self.model_to_resource_type(model)
 
         if field.many:
             obj_ids = []
@@ -412,8 +412,8 @@ class JsonApiMixin(object):
         linked = self.dict_class()
         data = resource.copy()
 
-        model = model_from_obj(field)
-        resource_type = model_to_resource_type(model)
+        model = self.model_from_obj(field)
+        resource_type = self.model_to_resource_type(model)
 
         if field_name in data:
             if "links" not in data:
@@ -441,8 +441,8 @@ class JsonApiMixin(object):
         linked = self.dict_class()
         data = resource.copy()
 
-        model = model_from_obj(field)
-        resource_type = model_to_resource_type(model)
+        model = self.model_from_obj(field)
+        resource_type = self.model_to_resource_type(model)
 
         links[field_name] = {
             "href": self.url_to_template(field.view_name, request, field_name),
@@ -486,6 +486,12 @@ class JsonApiMixin(object):
 
     def fields_from_resource(self, resource):
         return getattr(resource, "fields", None)
+
+    def model_to_resource_type(self, model):
+        return model_to_resource_type(model)
+
+    def model_from_obj(self, obj):
+        return model_from_obj(obj)
 
 
 class JsonApiRenderer(JsonApiMixin, renderers.JSONRenderer):

@@ -14,8 +14,8 @@ class JsonApiMixin(object):
 
         view = parser_context.get("view", None)
 
-        model = model_from_obj(view)
-        resource_type = model_to_resource_type(model)
+        model = self.model_from_obj(view)
+        resource_type = self.model_to_resource_type(model)
 
         resource = {}
 
@@ -69,6 +69,12 @@ class JsonApiMixin(object):
                 resource[field_name] = links[field_name]
 
         return resource
+
+    def model_from_obj(self, obj):
+        return model_from_obj(obj)
+
+    def model_to_resource_type(self, model):
+        return model_to_resource_type(model)
 
 
 class JsonApiParser(JsonApiMixin, parsers.JSONParser):

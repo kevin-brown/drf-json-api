@@ -14,6 +14,7 @@ class WrapperNotApplicable(ValueError):
 
 
 class JsonApiMixin(object):
+    dict_class = dict
     encoder_class = encoders.JSONEncoder
     media_type = 'application/vnd.api+json'
     wrappers = [
@@ -199,7 +200,8 @@ class JsonApiMixin(object):
             if isinstance(issues, six.string_types):
                 issues = [issues]
             for issue in issues:
-                error = {"status": status_code}
+                error = self.dict_class()
+                error["status"] = status_code
 
                 if issue_is_title:
                     error["title"] = issue
@@ -213,7 +215,9 @@ class JsonApiMixin(object):
                         error["path"] = '/' + field
 
                 errors.append(error)
-        return {"errors": errors}
+        wrapper = self.dict_class()
+        wrapper["errors"] = errors
+        return wrapper
 
     def wrap_options(self, data, renderer_context):
         '''Wrap OPTIONS data as JSON API meta value'''
@@ -222,7 +226,9 @@ class JsonApiMixin(object):
         if method != 'OPTIONS':
             raise WrapperNotApplicable("Request method must be OPTIONS")
 
-        return {"meta": data}
+        wrapper = self.dict_class()
+        wrapper["meta"] = data
+        return wrapper
 
     def wrap_default(self, data, renderer_context):
         """Convert native data to a JSON API resource collection
@@ -231,20 +237,16 @@ class JsonApiMixin(object):
         object with a `fields` dict-like attribute), or a list of
         such data objects.
         """
-        wrapper = {}
+        wrapper = self.dict_class()
         view = renderer_context.get("view", None)
         request = renderer_context.get("request", None)
 
         model = model_from_obj(view)
         resource_type = model_to_resource_type(model)
 
-        links = {}
-        linked = {}
-        item = {}
-
         if isinstance(data, list):
-            links = {}
-            linked = {}
+            links = self.dict_class()
+            linked = self.dict_class()
             items = []
 
             for resource in data:
@@ -263,7 +265,6 @@ class JsonApiMixin(object):
 
         if links:
             links = self.prepend_links_with_name(links, resource_type)
-
             wrapper["links"] = links
 
         if linked:
@@ -274,8 +275,8 @@ class JsonApiMixin(object):
     def convert_resource(self, resource, request):
         from rest_framework.settings import api_settings
 
-        links = {}
-        linked = {}
+        links = self.dict_class()
+        linked = self.dict_class()
         data = resource.copy()
 
         fields = self.fields_from_resource(resource)
@@ -336,8 +337,8 @@ class JsonApiMixin(object):
         return changed_links
 
     def handle_nested_serializer(self, resource, field, field_name, request):
-        links = {}
-        linked = {}
+        links = self.dict_class()
+        linked = self.dict_class()
         data = resource.copy()
 
         model = field.opts.model
@@ -371,7 +372,7 @@ class JsonApiMixin(object):
                 linked[resource_type].append(linked_obj)
 
             if "links" not in data:
-                data["links"] = {}
+                data["links"] = self.dict_class()
 
             data["links"][field_name] = obj_ids
             del data[field_name]
@@ -398,7 +399,7 @@ class JsonApiMixin(object):
             linked[resource_type].append(linked_obj)
 
             if "links" not in data:
-                data["links"] = {}
+                data["links"] = self.dict_class()
 
             data["links"][field_name] = linked_obj["id"]
 
@@ -407,8 +408,8 @@ class JsonApiMixin(object):
         return data, links, linked
 
     def handle_related_field(self, resource, field, field_name, request):
-        links = {}
-        linked = {}
+        links = self.dict_class()
+        linked = self.dict_class()
         data = resource.copy()
 
         model = model_from_obj(field)
@@ -416,7 +417,7 @@ class JsonApiMixin(object):
 
         if field_name in data:
             if "links" not in data:
-                data["links"] = {}
+                data["links"] = self.dict_class()
 
             links[field_name] = {
                 "type": resource_type,
@@ -436,8 +437,8 @@ class JsonApiMixin(object):
         return data, links, linked
 
     def handle_url_field(self, resource, field, field_name, request):
-        links = {}
-        linked = {}
+        links = self.dict_class()
+        linked = self.dict_class()
         data = resource.copy()
 
         model = model_from_obj(field)
@@ -450,7 +451,7 @@ class JsonApiMixin(object):
 
         if field_name in data:
             if "links" not in data:
-                data["links"] = {}
+                data["links"] = self.dict_class()
 
             data["links"][field_name] = self.url_to_pk(data[field_name], field)
             del data[field_name]

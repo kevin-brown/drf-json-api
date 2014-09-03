@@ -6,12 +6,178 @@ from rest_framework_json_api.utils import (
 from django.utils import encoding, six
 
 
+class WrapperNotApplicable(ValueError):
+    def __init__(self, *args, **kwargs):
+        self.data = kwargs.pop('data', None)
+        self.renderer_context = kwargs.pop('renderer_context', None)
+        return super(WrapperNotApplicable, self).__init__(*args, **kwargs)
+
+
 class JsonApiMixin(object):
     encoder_class = encoders.JSONEncoder
     media_type = 'application/vnd.api+json'
+    wrappers = [
+        'wrap_empty_response',
+        'wrap_parser_error',
+        'wrap_field_error',
+        'wrap_generic_error',
+        'wrap_options',
+        'wrap_default'
+    ]
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
         """Convert native data to JSON API
+
+        Tries each of the methods in `wrappers`, using the first successful
+        one, or raises `WrapperNotApplicable`.
+        """
+
+        wrapper = None
+        success = False
+        for wrapper_name in self.wrappers:
+            wrapper_method = getattr(self, wrapper_name)
+            try:
+                wrapper = wrapper_method(data, renderer_context)
+            except WrapperNotApplicable:
+                pass
+            else:
+                success = True
+                break
+        if not success:
+            raise WrapperNotApplicable(
+                'No acceptable wrappers found for response.',
+                data=data, renderer_context=renderer_context)
+
+        renderer_context["indent"] = 4
+        return super(JsonApiMixin, self).render(
+            data=wrapper,
+            accepted_media_type=accepted_media_type,
+            renderer_context=renderer_context)
+
+    def wrap_empty_response(self, data, renderer_context):
+        """Pass-through empty responses
+
+        204 No Content includes an empty response
+        """
+        if data is not None:
+            raise WrapperNotApplicable('Data must be empty.')
+
+        return data
+
+    def wrap_parser_error(self, data, renderer_context):
+        """
+        Convert parser errors to the JSON API Error format
+
+        Parser errors have a status code of 400, like field errors, but have
+        the same native format as generic errors.  Also, the detail message is
+        often specific to the input, so the error is listed as a 'detail'
+        rather than a 'title'.
+        """
+        response = renderer_context.get("response", None)
+        status_code = response and response.status_code
+        if status_code != 400:
+            raise WrapperNotApplicable('Status code must be 400.')
+        if list(data.keys()) != ['detail']:
+            raise WrapperNotApplicable('Data must only have "detail" key.')
+
+        # Probably a parser error, unless `detail` is a valid field
+        view = renderer_context.get("view", None)
+        model = model_from_obj(view)
+        if 'detail' in model._meta.get_all_field_names():
+            raise WrapperNotApplicable()
+
+        return self.wrap_error(
+            data, renderer_context, keys_are_fields=False,
+            issue_is_title=False)
+
+    def wrap_field_error(self, data, renderer_context):
+        """
+        Convert field error native data to the JSON API Error format
+
+        See the note about the JSON API Error format on `wrap_error`.
+
+        The native format for field errors is a dictionary where the keys are
+        field names (or 'non_field_errors' for additional errors) and the
+        values are a list of error strings:
+
+        {
+            "min": [
+                "min must be greater than 0.",
+                "min must be an even number."
+            ],
+            "max": ["max must be a positive number."],
+            "non_field_errors": [
+                "Select either a range or an enumeration, not both."]
+        }
+
+        It is rendered into this JSON API error format:
+
+        {
+            "errors": [{
+                "status": "400",
+                "path": "/min",
+                "detail": "min must be greater than 0."
+            },{
+                "status": "400",
+                "path": "/min",
+                "detail": "min must be an even number."
+            },{
+                "status": "400",
+                "path": "/max",
+                "detail": "max must be a positive number."
+            },{
+                "status": "400",
+                "path": "/-",
+                "detail": "Select either a range or an enumeration, not both."
+            }]
+        }
+        """
+        response = renderer_context.get("response", None)
+        status_code = response and response.status_code
+        if status_code != 400:
+            raise WrapperNotApplicable('Status code must be 400.')
+
+        return self.wrap_error(
+            data, renderer_context, keys_are_fields=True, issue_is_title=False)
+
+    def wrap_generic_error(self, data, renderer_context):
+        """
+        Convert generic error native data using the JSON API Error format
+
+        See the note about the JSON API Error format on `wrap_error`.
+
+        The native format for errors that are not bad requests, such as
+        authentication issues or missing content, is a dictionary with a
+        'detail' key and a string value:
+
+        {
+            "detail": "Authentication credentials were not provided."
+        }
+
+        This is rendered into this JSON API error format:
+
+        {
+            "errors": [{
+                "status": "403",
+                "title": "Authentication credentials were not provided"
+            }]
+        }
+        """
+        response = renderer_context.get("response", None)
+        status_code = response and response.status_code
+        is_error = (
+            status.is_client_error(status_code) or
+            status.is_server_error(status_code)
+        )
+        if not is_error:
+            raise WrapperNotApplicable("Status code must be 4xx or 5xx.")
+
+        return self.wrap_error(
+            data, renderer_context, keys_are_fields=False, issue_is_title=True)
+
+    def wrap_error(
+            self, data, renderer_context, keys_are_fields, issue_is_title):
+        """Convert error native data to the JSON API Error format
 
         JSON API has a different format for errors, but Django REST Framework
         doesn't have a separate rendering path for errors.  This results in
@@ -25,50 +191,46 @@ class JsonApiMixin(object):
         probably change.
         """
 
-        if data is None:
-            return super(JsonApiMixin, self).render(
-                data=data,
-                accepted_media_type=accepted_media_type,
-                renderer_context=renderer_context,
-            )
-
-        request = renderer_context.get("request", None)
         response = renderer_context.get("response", None)
+        status_code = str(response and response.status_code)
 
-        status_code = response and response.status_code
+        errors = []
+        for field, issues in data.items():
+            if isinstance(issues, six.string_types):
+                issues = [issues]
+            for issue in issues:
+                error = {"status": status_code}
 
-        is_error = (
-            status.is_client_error(status_code) or
-            status.is_server_error(status_code)
-        )
+                if issue_is_title:
+                    error["title"] = issue
+                else:
+                    error["detail"] = issue
 
-        if status_code == 400 and list(data.keys()) == ['detail']:
-            # Probably a parser error, but might be a field error
-            view = renderer_context.get("view", None)
-            model = model_from_obj(view)
-            if 'detail' in model._meta.get_all_field_names():
-                wrapper = self.wrap_field_error(data, renderer_context)
-            else:
-                wrapper = self.wrap_parser_error(data, renderer_context)
-        elif status_code == 400:
-            wrapper = self.wrap_field_error(data, renderer_context)
-        elif is_error:
-            wrapper = self.wrap_generic_error(data, renderer_context)
-        elif request and request.method == 'OPTIONS':
-            wrapper = self.wrap_options(data, renderer_context)
-        else:
-            wrapper = self.wrap_default(data, renderer_context)
+                if keys_are_fields:
+                    if field == 'non_field_errors':
+                        error["path"] = '/-'
+                    else:
+                        error["path"] = '/' + field
 
-        renderer_context["indent"] = 4
+                errors.append(error)
+        return {"errors": errors}
 
-        return super(JsonApiMixin, self).render(
-            data=wrapper,
-            accepted_media_type=accepted_media_type,
-            renderer_context=renderer_context,
-        )
+    def wrap_options(self, data, renderer_context):
+        '''Wrap OPTIONS data as JSON API meta value'''
+        request = renderer_context.get("request", None)
+        method = request and getattr(request, 'method')
+        if method != 'OPTIONS':
+            raise WrapperNotApplicable("Request method must be OPTIONS")
+
+        return {"meta": data}
 
     def wrap_default(self, data, renderer_context):
-        """Convert native data to a JSON API resource collection"""
+        """Convert native data to a JSON API resource collection
+
+        This wrapper expects a standard DRF data object (a dict-like
+        object with a `fields` dict-like attribute), or a list of
+        such data objects.
+        """
         wrapper = {}
         view = renderer_context.get("view", None)
         request = renderer_context.get("request", None)
@@ -109,124 +271,6 @@ class JsonApiMixin(object):
 
         return wrapper
 
-    def wrap_field_error(self, data, renderer_context):
-        """
-        Convert field error native data to the JSON API Error format
-
-        See the note about the JSON API Error format on render.
-
-        The native format for field errors is a dictionary where the keys are
-        field names (or 'non_field_errors' for additional errors) and the
-        values are a list of error strings:
-
-        {
-            "min": [
-                "min must be greater than 0.",
-                "min must be an even number."
-            ],
-            "max": ["max must be a positive number."],
-            "non_field_errors": [
-                "Select either a range or an enumeration, not both."]
-        }
-
-        It is rendered into this JSON API error format:
-
-        {
-            "errors": [{
-                "status": "400",
-                "path": "/min",
-                "detail": "min must be greater than 0."
-            },{
-                "status": "400",
-                "path": "/min",
-                "detail": "min must be an even number."
-            },{
-                "status": "400",
-                "path": "/max",
-                "detail": "max must be a positive number."
-            },{
-                "status": "400",
-                "path": "/-",
-                "detail": "Select either a range or an enumeration, not both."
-            }]
-        }
-        """
-        return self.wrap_error(
-            data, renderer_context, keys_are_fields=True, issue_is_title=False)
-
-    def wrap_generic_error(self, data, renderer_context):
-        """
-        Convert generic error native data using the JSON API Error format
-
-        See the note about the JSON API Error format on render.
-
-        The native format for errors that are not bad requests, such as
-        authentication issues or missing content, is a dictionary with a
-        'detail' key and a string value:
-
-        {
-            "detail": "Authentication credentials were not provided."
-        }
-
-        This is rendered into this JSON API error format:
-
-        {
-            "errors": [{
-                "status": "403",
-                "title": "Authentication credentials were not provided"
-            }]
-        }
-        """
-        return self.wrap_error(
-            data, renderer_context, keys_are_fields=False, issue_is_title=True)
-
-    def wrap_parser_error(self, data, renderer_context):
-        """
-        Convert parser errors to the JSON API Error format
-
-        See the note about the JSON API Error format on render.
-
-        Parser errors have a status code of 400, like field errors, but have
-        the same native format as generic errors.  Also, the detail message is
-        often specific to the input, so the error is listed as a 'detail'
-        rather than a 'title'.
-        """
-        return self.wrap_error(
-            data, renderer_context, keys_are_fields=False,
-            issue_is_title=False)
-
-    def wrap_error(
-            self, data, renderer_context, keys_are_fields, issue_is_title):
-        """Convert error native data to the JSON API Error format"""
-
-        response = renderer_context.get("response", None)
-        status_code = str(response and response.status_code)
-
-        errors = []
-        for field, issues in data.items():
-            if isinstance(issues, six.string_types):
-                issues = [issues]
-            for issue in issues:
-                error = {"status": status_code}
-
-                if issue_is_title:
-                    error["title"] = issue
-                else:
-                    error["detail"] = issue
-
-                if keys_are_fields:
-                    if field == 'non_field_errors':
-                        error["path"] = '/-'
-                    else:
-                        error["path"] = '/' + field
-
-                errors.append(error)
-        return {"errors": errors}
-
-    def wrap_options(self, data, renderer_context):
-        '''Wrap OPTIONS data as JSON API meta value'''
-        return {"meta": data}
-
     def convert_resource(self, resource, request):
         from rest_framework.settings import api_settings
 
@@ -235,6 +279,8 @@ class JsonApiMixin(object):
         data = resource.copy()
 
         fields = self.fields_from_resource(resource)
+        if not fields:
+            raise WrapperNotApplicable('Items must have a fields attribute.')
 
         if "id" in fields:
             data["id"] = encoding.force_text(data["id"])
@@ -438,12 +484,7 @@ class JsonApiMixin(object):
         return href
 
     def fields_from_resource(self, resource):
-        fields = getattr(resource, "fields", None)
-
-        if fields is not None:
-            return fields
-
-        return None
+        return getattr(resource, "fields", None)
 
 
 class JsonApiRenderer(JsonApiMixin, renderers.JSONRenderer):

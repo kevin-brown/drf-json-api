@@ -23,3 +23,10 @@ class Post(models.Model):
 class Comment(models.Model):
     post = models.ForeignKey(Post, related_name="comments")
     body = models.TextField()
+
+
+class ProfileImage(models.Model):
+    '''A profile image stored in a CDN'''
+    person = models.ForeignKey(Person)
+    url = models.URLField()
+    current = models.BooleanField(db_index=True)

@@ -1,4 +1,5 @@
 from rest_framework import relations, renderers, serializers, status
+from rest_framework.settings import api_settings
 from rest_framework_json_api import encoders
 from rest_framework_json_api.utils import (
     model_from_obj, model_to_resource_type
@@ -14,6 +15,16 @@ class WrapperNotApplicable(ValueError):
 
 
 class JsonApiMixin(object):
+    convert_by_name = {
+        'id': 'convert_to_text',
+        api_settings.URL_FIELD_NAME: 'rename_to_href',
+    }
+
+    convert_by_type = {
+        relations.PrimaryKeyRelatedField: 'handle_related_field',
+        relations.HyperlinkedRelatedField: 'handle_url_field',
+        serializers.ModelSerializer: 'handle_nested_serializer',
+    }
     dict_class = dict
     encoder_class = encoders.JSONEncoder
     media_type = 'application/vnd.api+json'
@@ -285,8 +296,6 @@ class JsonApiMixin(object):
         return wrapper
 
     def convert_resource(self, resource, request):
-        from rest_framework.settings import api_settings
-
         fields = self.fields_from_resource(resource)
         if not fields:
             raise WrapperNotApplicable('Items must have a fields attribute.')
@@ -296,32 +305,22 @@ class JsonApiMixin(object):
         links = self.dict_class()
         linked = self.dict_class()
         meta = self.dict_class()
-        url_field_name = api_settings.URL_FIELD_NAME
 
         for field_name, field in six.iteritems(fields):
-            if field_name == "id":
-                data["id"] = encoding.force_text(resource["id"])
-            elif field_name == url_field_name:
-                data["href"] = resource[url_field_name]
-            elif isinstance(field, relations.PrimaryKeyRelatedField):
-                converted = self.handle_related_field(
-                    resource, field, field_name, request)
-                data.update(converted.pop("data", {}))
-                linked_ids.update(converted.pop("linked_ids", {}))
-                links.update(converted.get("links", {}))
-                linked.update(converted.get("linked", {}))
-                meta.update(converted.get("meta", {}))
-            elif isinstance(field, relations.HyperlinkedRelatedField):
-                converted = self.handle_url_field(
-                    resource, field, field_name, request)
-                data.update(converted.pop("data", {}))
-                linked_ids.update(converted.pop("linked_ids", {}))
-                links.update(converted.get("links", {}))
-                linked.update(converted.get("linked", {}))
-                meta.update(converted.get("meta", {}))
-            elif isinstance(field, serializers.ModelSerializer):
-                converted = self.handle_nested_serializer(
-                    resource, field, field_name, request)
+            converted = None
+            if field_name in self.convert_by_name:
+                converter_name = self.convert_by_name[field_name]
+                converter = getattr(self, converter_name)
+                converted = converter(resource, field, field_name, request)
+            else:
+                for field_type, converter_name in \
+                        six.iteritems(self.convert_by_type):
+                    if isinstance(field, field_type):
+                        converter = getattr(self, converter_name)
+                        converted = converter(
+                            resource, field, field_name, request)
+                        break
+            if converted:
                 data.update(converted.pop("data", {}))
                 linked_ids.update(converted.pop("linked_ids", {}))
                 links.update(converted.get("links", {}))
@@ -337,6 +336,16 @@ class JsonApiMixin(object):
             'linked': linked,
             'meta': meta,
         }
+
+    def convert_to_text(self, resource, field, field_name, request):
+        data = self.dict_class()
+        data[field_name] = encoding.force_text(resource[field_name])
+        return {"data": data}
+
+    def rename_to_href(self, resource, field, field_name, request):
+        data = self.dict_class()
+        data['href'] = resource[field_name]
+        return {"data": data}
 
     def prepend_links_with_name(self, links, name):
         changed_links = links.copy()

@@ -4,6 +4,7 @@ from rest_framework_json_api import encoders
 from rest_framework_json_api.utils import (
     model_from_obj, model_to_resource_type
 )
+from django.core.exceptions import NON_FIELD_ERRORS
 from django.utils import encoding, six
 
 
@@ -220,7 +221,7 @@ class JsonApiMixin(object):
                     error["detail"] = issue
 
                 if keys_are_fields:
-                    if field == 'non_field_errors':
+                    if field in ('non_field_errors', NON_FIELD_ERRORS):
                         error["path"] = '/-'
                     else:
                         error["path"] = '/' + field

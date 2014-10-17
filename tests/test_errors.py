@@ -61,7 +61,8 @@ def test_auth_required(rf):
     assert response.content == dump_json(results)
 
 
-def test_field_validation_error(rf):
+def test_drf_non_field_validation_error(rf):
+    '''DRF uses 'non_field_errors' as the key for non-field errors'''
     class LazyPersonSerializer(PersonSerializer):
         def validate(self, attr):
             raise ValidationError("Feeling lazy. Try again later.")
@@ -86,6 +87,37 @@ def test_field_validation_error(rf):
             "status": "400",
             "path": "/-",
             "detail": "Feeling lazy. Try again later."
+        }]
+    }
+    assert response.content == dump_json(results)
+
+
+def test_django_non_field_validation_error(rf, monkeypatch):
+    '''Django uses __all__ as the key for non-field errors
+
+    Constant is django.core.exceptions.NON_FIELD_ERRORS
+    '''
+    def clean(self):
+        raise ValidationError("I'm not taking any new people today")
+
+    monkeypatch.setattr(models.Person, 'clean', clean)
+    data = dump_json({"people": {"name": "Jason Api"}})
+
+    request = rf.post(
+        reverse("person-list"), data=data,
+        content_type="application/vnd.api+json")
+    view = PersonViewSet.as_view({'post': 'create'})
+    response = view(request)
+    response.render()
+
+    assert response.status_code == 400, response.content
+    assert not models.Person.objects.exists()
+
+    results = {
+        "errors": [{
+            "status": "400",
+            "path": "/-",
+            "detail": "I'm not taking any new people today"
         }]
     }
     assert response.content == dump_json(results)

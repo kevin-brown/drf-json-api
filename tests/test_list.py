@@ -7,6 +7,7 @@ Error tests are in test_errors.py
 from django.core.urlresolvers import reverse
 from tests import models
 from tests.utils import dump_json
+from tests.views import PersonViewSet
 import pytest
 
 pytestmark = pytest.mark.django_db
@@ -176,4 +177,39 @@ def test_options(client):
     }
     response = client.options(reverse("post-list"))
     assert response.status_code == 200
+    assert response.content == dump_json(results)
+
+
+def test_pagination(rf):
+    models.Person.objects.create(name="test")
+
+    class PaginatedPersonViewSet(PersonViewSet):
+        paginate_by = 10
+
+    request = rf.get(
+        reverse("person-list"), content_type="application/vnd.api+json")
+    view = PaginatedPersonViewSet.as_view({'get': 'list'})
+    response = view(request)
+    response.render()
+
+    assert response.status_code == 200, response.content
+
+    results = {
+        "people": [
+            {
+                "id": "1",
+                "href": "http://testserver/people/1/",
+                "name": "test",
+            },
+        ],
+        "meta": {
+            "pagination": {
+                "people": {
+                    "count": 1,
+                    "next": None,
+                    "previous": None,
+                }
+            }
+        }
+    }
     assert response.content == dump_json(results)

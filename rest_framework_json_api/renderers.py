@@ -34,6 +34,7 @@ class JsonApiMixin(object):
         'wrap_field_error',
         'wrap_generic_error',
         'wrap_options',
+        'wrap_paginated',
         'wrap_default'
     ]
 
@@ -239,6 +240,31 @@ class JsonApiMixin(object):
 
         wrapper = self.dict_class()
         wrapper["meta"] = data
+        return wrapper
+
+    def wrap_paginated(self, data, renderer_context):
+        """Convert paginated data to JSON API with meta"""
+        pagination_keys = ['count', 'next', 'previous', 'results']
+        for key in pagination_keys:
+            if not (data and key in data):
+                raise WrapperNotApplicable('Not paginated results')
+
+        view = renderer_context.get("view", None)
+        model = self.model_from_obj(view)
+        resource_type = self.model_to_resource_type(model)
+
+        # Use default wrapper for results
+        wrapper = self.wrap_default(data['results'], renderer_context)
+
+        # Add pagination metadata
+        pagination = self.dict_class()
+        pagination['previous'] = data['previous']
+        pagination['next'] = data['next']
+        pagination['count'] = data['count']
+        wrapper.setdefault('meta', self.dict_class())
+        wrapper['meta'].setdefault('pagination', self.dict_class())
+        wrapper['meta']['pagination'].setdefault(
+            resource_type, self.dict_class()).update(pagination)
         return wrapper
 
     def wrap_default(self, data, renderer_context):

@@ -102,6 +102,17 @@ specification <http://jsonapi.org/format/#document-structure-compound-documents>
 This will theoretically support any depth of nested serializers, but
 only a single level is tested and supported.
 
+Pagination
+~~~~~~~~~~
+JSON API does not explicitly call out pagination within the
+specification, but instead leaves it flexible for the developer to
+implement. The JSON API renderer supports the default pagination provided
+by Django REST Framework by adding it to the top level "meta" element.  This
+can be overriden by using a modified render, or a paginator that relies on a
+header, such as `the Link header based
+paginator <https://github.com/kevin-brown/drf-link-pagination>`__.
+
+
 What this will not easily support
 ---------------------------------
 
@@ -109,21 +120,6 @@ Due to limitations within the JSON API specification, as well as a need
 to handle the most common easy cases, this JSON API renderer will not
 work with all views. When designing views that work well with the JSON
 API specification, there are a few needs that you should keep in mind.
-
-Pagination
-~~~~~~~~~~
-
-JSON API does not explicitly call out pagination within the
-specification, but instead leaves it flexible for the developer to
-implement. Because of this, the JSON API renderer does not support the
-default pagination provided by Django REST Framework. List endpoints are
-expected to return lists, while detail endpoints are expected to return
-a single item that should be rendered. **This does not mean that no
-paginators can be used** with JSON API, only paginators which do not
-return metadata within the body of the response. Paginators which rely
-on headers, such as `the Link header based
-paginator <https://github.com/kevin-brown/drf-link-pagination>`__ will
-typically work with the JSON API renderer.
 
 Anything not related to rendering or parsing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -156,8 +152,7 @@ Pagination
 
 `The Link header based
 paginator <https://github.com/kevin-brown/drf-link-pagination>`__ will
-work with the renderer provided by this package as well as any
-paginators which only use the headers of a response.
+work with the renderer provided by this package.
 
 JSON Patch
 ~~~~~~~~~~

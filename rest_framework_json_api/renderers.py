@@ -1,9 +1,12 @@
+from urlparse import urlparse, urlunparse
+
 from rest_framework import relations, renderers, serializers, status
 from rest_framework.settings import api_settings
 from rest_framework_json_api import encoders
 from rest_framework_json_api.utils import (
     model_from_obj, model_to_resource_type
 )
+from django.core import urlresolvers
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.utils import encoding, six
 
@@ -489,19 +492,19 @@ class JsonApiMixin(object):
             return None
 
     def url_to_template(self, view_name, request, template_name):
-        from rest_framework.reverse import reverse
+        resolver = urlresolvers.get_resolver(None)
+        info = resolver.reverse_dict[view_name]
 
-        test_pk = 999999
+        path_template = info[0][0][0]
+        # FIXME: what happens when URL has more than one dynamic values?
+        # e.g. nested relations: manufacturer/%(id)s/cars/%(card_id)s
+        path = path_template % {info[0][0][1][0]: '{%s}' % template_name}
 
-        test_kwargs = {
-            "pk": test_pk,
-        }
-        test_reverse = reverse(view_name, kwargs=test_kwargs, request=request)
+        parsed_url = urlparse(request.build_absolute_uri())
 
-        href = test_reverse.replace(
-            encoding.force_text(test_pk), "{%s}" % template_name)
-
-        return href
+        return urlunparse(
+            [parsed_url.scheme, parsed_url.netloc, path, '', '', '']
+        )
 
     def fields_from_resource(self, resource):
         return getattr(resource, "fields", None)

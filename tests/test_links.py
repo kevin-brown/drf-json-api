@@ -35,7 +35,7 @@ def test_single_links(client):
     assert response.content == dump_json(results)
 
 
-def test_multiple_links(client):
+def test_multiple_links(client, url_name='post-list'):
     author = models.Person.objects.create(name="test")
     post = models.Post.objects.create(author=author, title="Test post title")
     models.Comment.objects.create(post=post, body="Test comment one.")
@@ -65,9 +65,13 @@ def test_multiple_links(client):
         ],
     }
 
-    response = client.get(reverse("post-list"))
+    response = client.get(reverse(url_name))
 
     assert response.content == dump_json(results)
+
+
+def test_multiple_links_with_namespaced_url(client):
+    test_multiple_links(client, url_name='n1:post-list')
 
 
 def test_pk_related(client):

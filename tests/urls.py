@@ -1,4 +1,6 @@
+from django.conf.urls import patterns, include, url
 from rest_framework import routers
+
 from tests import views
 
 
@@ -18,3 +20,8 @@ router.register(
     "pk-people-full", views.PkMaximalPersonViewSet, base_name="pk-people-full")
 
 urlpatterns = router.urls
+
+urlpatterns += patterns(
+    '',
+    url('posts', include('tests.namespace_urls', namespace='n1'))
+)

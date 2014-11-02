@@ -1,4 +1,4 @@
-from urlparse import urlparse, urlunparse
+from six.moves.urllib.parse import urlparse, urlunparse
 
 from rest_framework import relations, renderers, serializers, status
 from rest_framework.settings import api_settings

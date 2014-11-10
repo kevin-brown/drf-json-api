@@ -1,5 +1,3 @@
-from six.moves.urllib.parse import urlparse, urlunparse
-
 from rest_framework import relations, renderers, serializers, status
 from rest_framework.settings import api_settings
 from rest_framework_json_api import encoders
@@ -9,6 +7,7 @@ from rest_framework_json_api.utils import (
 from django.core import urlresolvers
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.utils import encoding, six
+from django.utils.six.moves.urllib.parse import urlparse, urlunparse
 
 
 class WrapperNotApplicable(ValueError):

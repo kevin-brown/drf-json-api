@@ -6,7 +6,9 @@ python:
   - "3.3"
   - "3.4"
 
-install: pip install -r requirements.txt -r requirements.test.txt
+install: pip install -r requirements.txt -r requirements.test.txt flake8
+
+before_script: python setup.py flake8
 
 script: py.test -vv
 

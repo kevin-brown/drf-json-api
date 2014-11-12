@@ -1,5 +1,4 @@
 from django.core.urlresolvers import reverse
-from rest_framework.test import APITestCase
 import pytest
 
 from tests.utils import dump_json
@@ -18,8 +17,8 @@ def test_basic(client):
         "name": "test",
     }
 
-    response = client.generic("echo",
-        reverse("person-list"), data=test_data,
+    response = client.generic(
+        "echo", reverse("person-list"), data=test_data,
         content_type="application/vnd.api+json")
 
     assert response.data == output_data
@@ -46,8 +45,8 @@ def test_multiple(client):
         },
     ]
 
-    response = client.generic("echo",
-        reverse("person-list"), data=test_data,
+    response = client.generic(
+        "echo", reverse("person-list"), data=test_data,
         content_type="application/vnd.api+json",
     )
 
@@ -69,8 +68,8 @@ def test_single_link(client):
         "post": "http://testserver/posts/1/",
     }
 
-    response = client.generic("echo",
-        reverse("comment-list"), data=test_data,
+    response = client.generic(
+        "echo", reverse("comment-list"), data=test_data,
         content_type="application/vnd.api+json",
     )
 
@@ -95,8 +94,8 @@ def test_multiple_link(client):
         ],
     }
 
-    response = client.generic("echo",
-        reverse("post-list"), data=test_data,
+    response = client.generic(
+        "echo", reverse("post-list"), data=test_data,
         content_type="application/vnd.api+json",
     )
 

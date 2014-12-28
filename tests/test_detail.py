@@ -53,7 +53,6 @@ def test_object_with_optional_links(client):
 
 
 def test_update_attribute(client):
-
     models.Person.objects.create(name="test")
 
     data = dump_json({
@@ -83,9 +82,10 @@ def test_update_attribute(client):
         }
     }
 
-    response = client.put(
+    response = client.patch(
         reverse("people-full-detail", args=[1]), data,
         content_type="application/vnd.api+json")
+
     assert response.content == dump_json(results)
 
 
@@ -124,7 +124,7 @@ def test_update_to_one_link(client):
         }
     }
 
-    response = client.put(
+    response = client.patch(
         reverse("people-full-detail", args=[1]), data,
         content_type="application/vnd.api+json")
     assert response.content == dump_json(results)
@@ -203,7 +203,6 @@ def test_object_with_pk_links(client):
 
 
 def test_update_pk_attribute(client):
-
     models.Person.objects.create(name="test")
 
     data = dump_json({
@@ -215,6 +214,7 @@ def test_update_pk_attribute(client):
             }
         },
     })
+
     results = {
         "people": {
             "id": "1",
@@ -235,9 +235,10 @@ def test_update_pk_attribute(client):
         }
     }
 
-    response = client.put(
+    response = client.patch(
         reverse("pk-people-full-detail", args=[1]), data,
         content_type="application/vnd.api+json")
+
     assert response.content == dump_json(results)
 
 

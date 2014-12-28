@@ -1,5 +1,6 @@
 from rest_framework import parsers, relations
 from rest_framework_json_api.utils import (
+    get_related_field, is_related_many,
     model_from_obj, model_to_resource_type
 )
 from django.utils import six
@@ -43,26 +44,35 @@ class JsonApiMixin(object):
         for field_name, field in six.iteritems(fields):
             if field_name not in links:
                 continue
-            if isinstance(field, relations.HyperlinkedRelatedField):
 
-                if field.many:
+            related_field = get_related_field(field)
+
+            if isinstance(related_field, relations.HyperlinkedRelatedField):
+                if is_related_many(field):
                     pks = links[field_name]
-                    model = field.queryset.model
+                    model = related_field.queryset.model
 
                     resource[field_name] = []
 
                     for pk in pks:
                         obj = model(pk=pk)
-                        url = field.to_native(obj)
+
+                        try:
+                            url = related_field.to_representation(obj)
+                        except AttributeError:
+                            url = related_field.to_native(obj)
 
                         resource[field_name].append(url)
                 else:
                     pk = links[field_name]
-                    model = field.queryset.model
+                    model = related_field.queryset.model
 
                     obj = model(pk=pk)
 
-                    url = field.to_native(obj)
+                    try:
+                        url = related_field.to_representation(obj)
+                    except AttributeError:
+                        url = related_field.to_native(obj)
 
                     resource[field_name] = url
             else:

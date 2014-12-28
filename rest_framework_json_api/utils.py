@@ -1,6 +1,41 @@
 from django.utils.encoding import force_text
 from django.utils.text import slugify
 
+from rest_framework.serializers import RelatedField
+
+try:
+    from rest_framework.serializers import ManyRelatedField
+except ImportError:
+    ManyRelatedField = type(None)
+
+try:
+    from rest_framework.serializers import ListSerializer
+except ImportError:
+    ListSerializer = type(None)
+
+
+def get_related_field(field):
+    if isinstance(field, ManyRelatedField):
+        return field.child_relation
+
+    if isinstance(field, ListSerializer):
+        return field.child
+
+    return field
+
+
+def is_related_many(field):
+    if hasattr(field, "many"):
+        return field.many
+
+    if isinstance(field, ManyRelatedField):
+        return True
+
+    if isinstance(field, ListSerializer):
+        return True
+
+    return False
+
 
 def model_from_obj(obj):
     model = getattr(obj, "model", None)

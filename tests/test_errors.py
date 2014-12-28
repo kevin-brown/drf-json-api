@@ -3,17 +3,20 @@
 from django.core.urlresolvers import reverse
 from rest_framework.serializers import ValidationError
 from rest_framework.permissions import IsAuthenticated
+
 from tests import models
 from tests.serializers import PersonSerializer
 from tests.utils import dump_json
 from tests.views import PersonViewSet
+
 import pytest
+import rest_framework
 
 pytestmark = pytest.mark.django_db
 
 
 def test_required_field_omitted(client):
-    data = {"name": ""}
+    data = {}
     data_json_api = dump_json({"people": data})
 
     response = client.post(
@@ -33,6 +36,7 @@ def test_required_field_omitted(client):
             "status": "400"
         }]
     }
+
     assert response.content == dump_json(results)
 
 
@@ -92,6 +96,10 @@ def test_drf_non_field_validation_error(rf):
     assert response.content == dump_json(results)
 
 
+@pytest.mark.skipif(
+    rest_framework.__version__.split(".")[0] >= "3",
+    reason="DRF 3+ no longer calls model.clean",
+)
 def test_django_non_field_validation_error(rf, monkeypatch):
     '''Django uses __all__ as the key for non-field errors
 
@@ -130,6 +138,7 @@ def test_invalid_forward_relation(client):
         "posts": {
             "title": "This is the title",
             "author": "http://testserver/people/1/",
+            "comments": [],
         }
     })
 
@@ -145,9 +154,10 @@ def test_invalid_forward_relation(client):
         "errors": [{
             "status": "400",
             "path": "/author",
-            "detail": "Invalid hyperlink - object does not exist."
+            "detail": "Invalid hyperlink - Object does not exist."
         }]
     }
+
     assert response.content == dump_json(results)
 
 
@@ -173,9 +183,10 @@ def test_invalid_reverse_relation(client):
         "errors": [{
             "status": "400",
             "path": "/comments",
-            "detail": "Invalid hyperlink - object does not exist."
+            "detail": "Invalid hyperlink - Object does not exist."
         }]
     }
+
     assert response.content == dump_json(results)
 
 

@@ -1,5 +1,6 @@
 from rest_framework import relations, serializers
 from tests import models
+import rest_framework
 
 
 class CommentSerializer(serializers.HyperlinkedModelSerializer):
@@ -24,6 +25,7 @@ class PostSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class MaximalPersonSerializer(serializers.HyperlinkedModelSerializer):
+
     class Meta:
         fields = ("id", "url", "name", "favorite_post", "liked_comments")
         model = models.Person
@@ -50,9 +52,15 @@ class NestedPostSerializer(PostSerializer):
 
 
 class PkCommentSerializer(CommentSerializer):
-    post = relations.PrimaryKeyRelatedField()
+    post = relations.PrimaryKeyRelatedField(queryset=models.Post.objects)
+
+
+single_related_kwargs = {}
+
+if rest_framework.__version__.split(".")[0] >= "3":
+    single_related_kwargs = {"allow_null": True}
 
 
 class PkMaximalPersonSerializer(MaximalPersonSerializer):
-    favorite_post = relations.PrimaryKeyRelatedField(null=True)
-    liked_comments = relations.PrimaryKeyRelatedField(many=True)
+    favorite_post = relations.PrimaryKeyRelatedField(required=False, queryset=models.Post.objects, **single_related_kwargs)
+    liked_comments = relations.PrimaryKeyRelatedField(required=False, many=True, queryset=models.Comment.objects)

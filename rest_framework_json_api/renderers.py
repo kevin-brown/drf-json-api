@@ -2,6 +2,7 @@ from rest_framework import relations, renderers, serializers, status
 from rest_framework.settings import api_settings
 from rest_framework_json_api import encoders
 from rest_framework_json_api.utils import (
+    get_related_field, is_related_many,
     model_from_obj, model_to_resource_type
 )
 from django.core import urlresolvers
@@ -11,9 +12,11 @@ from django.utils.six.moves.urllib.parse import urlparse, urlunparse
 
 
 class WrapperNotApplicable(ValueError):
+
     def __init__(self, *args, **kwargs):
         self.data = kwargs.pop('data', None)
         self.renderer_context = kwargs.pop('renderer_context', None)
+
         return super(WrapperNotApplicable, self).__init__(*args, **kwargs)
 
 
@@ -50,6 +53,7 @@ class JsonApiMixin(object):
 
         wrapper = None
         success = False
+
         for wrapper_name in self.wrappers:
             wrapper_method = getattr(self, wrapper_name)
             try:
@@ -59,22 +63,26 @@ class JsonApiMixin(object):
             else:
                 success = True
                 break
+
         if not success:
             raise WrapperNotApplicable(
                 'No acceptable wrappers found for response.',
                 data=data, renderer_context=renderer_context)
 
         renderer_context["indent"] = 4
+
         return super(JsonApiMixin, self).render(
             data=wrapper,
             accepted_media_type=accepted_media_type,
             renderer_context=renderer_context)
 
     def wrap_empty_response(self, data, renderer_context):
-        """Pass-through empty responses
+        """
+        Pass-through empty responses
 
         204 No Content includes an empty response
         """
+
         if data is not None:
             raise WrapperNotApplicable('Data must be empty.')
 
@@ -89,16 +97,20 @@ class JsonApiMixin(object):
         often specific to the input, so the error is listed as a 'detail'
         rather than a 'title'.
         """
+
         response = renderer_context.get("response", None)
         status_code = response and response.status_code
+
         if status_code != 400:
             raise WrapperNotApplicable('Status code must be 400.')
+
         if list(data.keys()) != ['detail']:
             raise WrapperNotApplicable('Data must only have "detail" key.')
 
         # Probably a parser error, unless `detail` is a valid field
         view = renderer_context.get("view", None)
         model = self.model_from_obj(view)
+
         if 'detail' in model._meta.get_all_field_names():
             raise WrapperNotApplicable()
 
@@ -247,6 +259,7 @@ class JsonApiMixin(object):
 
     def wrap_paginated(self, data, renderer_context):
         """Convert paginated data to JSON API with meta"""
+
         pagination_keys = ['count', 'next', 'previous', 'results']
         for key in pagination_keys:
             if not (data and key in data):
@@ -256,18 +269,32 @@ class JsonApiMixin(object):
         model = self.model_from_obj(view)
         resource_type = self.model_to_resource_type(model)
 
+        try:
+            from rest_framework.utils.serializer_helpers import ReturnList
+
+            results = ReturnList(
+                data["results"],
+                serializer=data.serializer.fields["results"],
+            )
+        except ImportError:
+            results = data["results"]
+
         # Use default wrapper for results
-        wrapper = self.wrap_default(data['results'], renderer_context)
+        wrapper = self.wrap_default(results, renderer_context)
 
         # Add pagination metadata
         pagination = self.dict_class()
+
         pagination['previous'] = data['previous']
         pagination['next'] = data['next']
         pagination['count'] = data['count']
+
         wrapper.setdefault('meta', self.dict_class())
+
         wrapper['meta'].setdefault('pagination', self.dict_class())
         wrapper['meta']['pagination'].setdefault(
             resource_type, self.dict_class()).update(pagination)
+
         return wrapper
 
     def wrap_default(self, data, renderer_context):
@@ -277,6 +304,7 @@ class JsonApiMixin(object):
         object with a `fields` dict-like attribute), or a list of
         such data objects.
         """
+
         wrapper = self.dict_class()
         view = renderer_context.get("view", None)
         request = renderer_context.get("request", None)
@@ -295,8 +323,9 @@ class JsonApiMixin(object):
         links = self.dict_class()
         linked = self.dict_class()
         meta = self.dict_class()
+
         for resource in resources:
-            converted = self.convert_resource(resource, request)
+            converted = self.convert_resource(resource, data, request)
             item = converted.get('data', {})
             linked_ids = converted.get('linked_ids', {})
             if linked_ids:
@@ -324,8 +353,9 @@ class JsonApiMixin(object):
 
         return wrapper
 
-    def convert_resource(self, resource, request):
-        fields = self.fields_from_resource(resource)
+    def convert_resource(self, resource, data, request):
+        fields = self.fields_from_resource(resource, data)
+
         if not fields:
             raise WrapperNotApplicable('Items must have a fields attribute.')
 
@@ -337,18 +367,22 @@ class JsonApiMixin(object):
 
         for field_name, field in six.iteritems(fields):
             converted = None
+
             if field_name in self.convert_by_name:
                 converter_name = self.convert_by_name[field_name]
                 converter = getattr(self, converter_name)
                 converted = converter(resource, field, field_name, request)
             else:
+                related_field = get_related_field(field)
+
                 for field_type, converter_name in \
                         six.iteritems(self.convert_by_type):
-                    if isinstance(field, field_type):
+                    if isinstance(related_field, field_type):
                         converter = getattr(self, converter_name)
                         converted = converter(
                             resource, field, field_name, request)
                         break
+
             if converted:
                 data.update(converted.pop("data", {}))
                 linked_ids.update(converted.pop("linked_ids", {}))
@@ -396,7 +430,13 @@ class JsonApiMixin(object):
         return changed_links
 
     def handle_nested_serializer(self, resource, field, field_name, request):
-        model = field.opts.model
+        serializer_field = get_related_field(field)
+
+        if hasattr(serializer_field, "opts"):
+            model = serializer_field.opts.model
+        else:
+            model = serializer_field.Meta.model
+
         resource_type = self.model_to_resource_type(model)
 
         linked_ids = self.dict_class()
@@ -404,33 +444,45 @@ class JsonApiMixin(object):
         linked = self.dict_class()
         linked[resource_type] = []
 
-        if field.many:
+        if is_related_many(field):
             items = resource[field_name]
         else:
             items = [resource[field_name]]
 
         obj_ids = []
+
+        resource.serializer = serializer_field
+
         for item in items:
-            converted = self.convert_resource(item, request)
+            converted = self.convert_resource(item, resource, request)
             linked_obj = converted["data"]
             linked_ids = converted.pop("linked_ids", {})
+
             if linked_ids:
                 linked_obj["links"] = linked_ids
+
             obj_ids.append(converted["data"]["id"])
 
             field_links = self.prepend_links_with_name(
                 converted.get("links", {}), resource_type)
-            if hasattr(field.opts, "view_name"):
-                field_links[field_name] = {
-                    "href": self.url_to_template(
-                        field.opts.view_name, request, field_name),
-                    "type": resource_type,
-                }
+
+
+            field_links[field_name] = {
+                "type": resource_type,
+            }
+
+            if "href" in converted["data"]:
+                url_field = serializer_field.fields[api_settings.URL_FIELD_NAME]
+
+                field_links[field_name]["href"] = self.url_to_template(
+                    url_field.view_name, request, field_name,
+                )
+
             links.update(field_links)
 
             linked[resource_type].append(linked_obj)
 
-        if field.many:
+        if is_related_many(field):
             linked_ids[field_name] = obj_ids
         else:
             linked_ids[field_name] = obj_ids[0]
@@ -441,7 +493,9 @@ class JsonApiMixin(object):
         links = self.dict_class()
         linked_ids = self.dict_class()
 
-        model = self.model_from_obj(field)
+        related_field = get_related_field(field)
+
+        model = self.model_from_obj(related_field)
         resource_type = self.model_to_resource_type(model)
 
         if field_name in resource:
@@ -449,7 +503,7 @@ class JsonApiMixin(object):
                 "type": resource_type,
             }
 
-            if field.many:
+            if is_related_many(field):
                 link_data = [
                     encoding.force_text(pk) for pk in resource[field_name]]
             elif resource[field_name]:
@@ -465,11 +519,13 @@ class JsonApiMixin(object):
         links = self.dict_class()
         linked_ids = self.dict_class()
 
-        model = self.model_from_obj(field)
+        related_field = get_related_field(field)
+
+        model = self.model_from_obj(related_field)
         resource_type = self.model_to_resource_type(model)
 
         links[field_name] = {
-            "href": self.url_to_template(field.view_name, request, field_name),
+            "href": self.url_to_template(related_field.view_name, request, field_name),
             "type": resource_type,
         }
 
@@ -480,12 +536,20 @@ class JsonApiMixin(object):
         return {"linked_ids": linked_ids, "links": links}
 
     def url_to_pk(self, url_data, field):
-        if field.many:
-            obj_list = [field.from_native(url) for url in url_data]
+        if is_related_many(field):
+            try:
+                obj_list = field.to_internal_value(url_data)
+            except AttributeError:
+                obj_list = [field.from_native(url) for url in url_data]
+
             return [encoding.force_text(obj.pk) for obj in obj_list]
 
         if url_data:
-            obj = field.from_native(url_data)
+            try:
+                obj = field.to_internal_value(url_data)
+            except AttributeError:
+                obj = field.from_native(url_data)
+
             return encoding.force_text(obj.pk)
         else:
             return None
@@ -505,7 +569,13 @@ class JsonApiMixin(object):
             [parsed_url.scheme, parsed_url.netloc, path, '', '', '']
         )
 
-    def fields_from_resource(self, resource):
+    def fields_from_resource(self, resource, data):
+        if hasattr(data, "serializer"):
+            resource = data.serializer
+
+            if hasattr(resource, "child"):
+                resource = resource.child
+
         return getattr(resource, "fields", None)
 
     def model_to_resource_type(self, model):

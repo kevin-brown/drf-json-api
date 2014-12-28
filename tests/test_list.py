@@ -98,6 +98,7 @@ def test_create_post_success(client):
             "title": "This is the title",
             "links": {
                 "author": author.pk,
+                "comments": [],
             },
         }
     })
@@ -139,12 +140,15 @@ def test_options(client):
             "actions": {
                 "POST": {
                     "author": {
-                        "label": "author",
+                        "choices": [],
+                        "label": "Author",
                         "read_only": False,
                         "required": True,
                         "type": "field"
                     },
                     "comments": {
+                        "choices": [],
+                        "label": "Comments",
                         "read_only": False,
                         "required": True,
                         "type": "field"
@@ -156,13 +160,13 @@ def test_options(client):
                         "type": "integer"
                     },
                     "title": {
-                        "label": "title",
-                        "max_length": 100,
+                        "label": "Title",
                         "read_only": False,
                         "required": True,
                         "type": "string"
                     },
                     "url": {
+                        "label": "Url",
                         "read_only": True,
                         "required": False,
                         "type": "field"
@@ -175,7 +179,9 @@ def test_options(client):
             "renders": ["application/vnd.api+json"],
         }
     }
+
     response = client.options(reverse("post-list"))
+
     assert response.status_code == 200
     assert response.content == dump_json(results)
 
@@ -212,4 +218,7 @@ def test_pagination(rf):
             }
         }
     }
+
+    assert response.content.decode("utf-8") == dump_json(results).decode("utf-8")
+
     assert response.content == dump_json(results)

@@ -466,13 +466,13 @@ class JsonApiMixin(object):
             field_links = self.prepend_links_with_name(
                 converted.get("links", {}), resource_type)
 
-
             field_links[field_name] = {
                 "type": resource_type,
             }
 
             if "href" in converted["data"]:
-                url_field = serializer_field.fields[api_settings.URL_FIELD_NAME]
+                url_field_name = api_settings.URL_FIELD_NAME
+                url_field = serializer_field.fields[url_field_name]
 
                 field_links[field_name]["href"] = self.url_to_template(
                     url_field.view_name, request, field_name,
@@ -525,7 +525,9 @@ class JsonApiMixin(object):
         resource_type = self.model_to_resource_type(model)
 
         links[field_name] = {
-            "href": self.url_to_template(related_field.view_name, request, field_name),
+            "href": self.url_to_template(related_field.view_name,
+                                         request,
+                                         field_name),
             "type": resource_type,
         }
 

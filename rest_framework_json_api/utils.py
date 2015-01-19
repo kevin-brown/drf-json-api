@@ -1,8 +1,6 @@
 from django.utils.encoding import force_text
 from django.utils.text import slugify
 
-from rest_framework.serializers import RelatedField
-
 try:
     from rest_framework.serializers import ManyRelatedField
 except ImportError:

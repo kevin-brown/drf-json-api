@@ -7,6 +7,8 @@ try:
 except ImportError:
     from distutils.core import setup
 
+from rest_framework_json_api import __version__
+
 
 readme = open('README.rst').read()
 doclink = """
@@ -18,7 +20,7 @@ history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 setup(
     name='drf-json-api',
-    version='0.1.0',
+    version=__version__,
     description=(
         'A parser and renderer for Django REST Framework that adds support'
         ' for the JSON API specification.'),

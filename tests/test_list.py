@@ -6,6 +6,7 @@ Error tests are in test_errors.py
 
 from django.core.urlresolvers import reverse
 from tests import models
+from tests.serializers import PostSerializer
 from tests.utils import dump_json
 from tests.views import PersonViewSet
 import pytest
@@ -135,6 +136,7 @@ def test_create_post_success(client):
 
 
 def test_options(client):
+    # DRF 3.x representation
     results = {
         "meta": {
             "actions": {
@@ -179,6 +181,11 @@ def test_options(client):
             "renders": ["application/vnd.api+json"],
         }
     }
+
+    # DRF 2.x representation - fields labels are lowercase, no choices
+    ps = PostSerializer()
+    if hasattr(ps, 'metadata'):
+        results['meta']['actions']['POST'] = ps.metadata()
 
     response = client.options(reverse("post-list"))
 

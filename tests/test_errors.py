@@ -1,6 +1,7 @@
 """Test error response renderer"""
 
 from django.core.urlresolvers import reverse
+from rest_framework.relations import HyperlinkedRelatedField
 from rest_framework.serializers import ValidationError
 from rest_framework.permissions import IsAuthenticated
 
@@ -13,6 +14,14 @@ import pytest
 import rest_framework
 
 pytestmark = pytest.mark.django_db
+
+# "Invalid hyperlink - object does not exist." - DRF 2.x
+# "Invalid hyperlink - Object does not exist." - DRF 3.x
+# Both wrapped in a proxy class that needs to be unproxied
+#  in order to serialized to JSON
+does_not_exist = (
+    HyperlinkedRelatedField.default_error_messages['does_not_exist']
+    .encode('utf-8').decode('utf-8'))
 
 
 def test_required_field_omitted(client):
@@ -154,7 +163,7 @@ def test_invalid_forward_relation(client):
         "errors": [{
             "status": "400",
             "path": "/author",
-            "detail": "Invalid hyperlink - Object does not exist."
+            "detail": does_not_exist
         }]
     }
 
@@ -183,7 +192,7 @@ def test_invalid_reverse_relation(client):
         "errors": [{
             "status": "400",
             "path": "/comments",
-            "detail": "Invalid hyperlink - Object does not exist."
+            "detail": does_not_exist
         }]
     }
 

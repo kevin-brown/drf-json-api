@@ -56,6 +56,12 @@ def CommentSerializer():
 
 def pytest_configure():
     from django.conf import settings
+    try:
+        # setup from Django 1.7+
+        from django import setup
+    except ImportError:
+        # Not needed in Django 1.6 or less
+        setup = lambda: None
 
     settings.configure(
         DEBUG_PROPAGATE_EXCEPTIONS=True,
@@ -92,3 +98,4 @@ def pytest_configure():
             "TEST_REQUEST_DEFAULT_FORMAT": "json",
         },
     )
+    setup()

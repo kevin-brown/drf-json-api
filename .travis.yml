@@ -1,16 +1,27 @@
 language: python
-
-python:
-  - "2.7"
-  - "3.2"
-  - "3.3"
-  - "3.4"
-
-install: pip install -r requirements.txt -r requirements.test.txt flake8
-
-before_script: python setup.py flake8
-
-script: py.test -vv
-
-notifications:
-  email: false
+install: pip install tox
+script: tox
+env:
+  - TOXENV=py27-django16-drf23
+  - TOXENV=py27-django16-drf24
+  - TOXENV=py27-django16-drf30
+  - TOXENV=py32-django16-drf23
+  - TOXENV=py32-django16-drf24
+  - TOXENV=py32-django16-drf30
+  - TOXENV=py33-django16-drf23
+  - TOXENV=py33-django16-drf24
+  - TOXENV=py33-django16-drf30
+  - TOXENV=py27-django17-drf23
+  - TOXENV=py27-django17-drf24
+  - TOXENV=py27-django17-drf30
+  - TOXENV=py32-django17-drf23
+  - TOXENV=py32-django17-drf24
+  - TOXENV=py32-django17-drf30
+  - TOXENV=py33-django17-drf23
+  - TOXENV=py33-django17-drf24
+  - TOXENV=py33-django17-drf30
+  - TOXENV=py34-django17-drf23
+  - TOXENV=py34-django17-drf24
+  - TOXENV=py34-django17-drf30
+  - TOXENV=style
+  - TOXENV=docs

@@ -588,7 +588,7 @@ class JsonApiMixin(object):
         return model_from_obj(obj)
 
     def update_nested(self, existing_linked, u):
-        for k, new_values in u.iteritems():
+        for k, new_values in u.items():
             if k in existing_linked:
                 # The dictionary already exists, so we need to check
                 # that all the already existing links in the dictionary

@@ -125,7 +125,7 @@ def test_multiple_root_entities_linked(client):
             {
                 "id": "2",
                 "href": "http://testserver/posts/2/",
-                "title": "One amazing test post.",
+                "title": "A second amazing test post.",
                 "links": {
                     "author": "1",
                     "comments": ["3"],
@@ -162,7 +162,6 @@ def test_multiple_root_entities_linked(client):
             ],
         },
     }
-
     response = client.get(reverse("nested-post-list"))
 
     assert response.content == dump_json(results)

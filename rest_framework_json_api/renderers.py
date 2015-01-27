@@ -333,7 +333,8 @@ class JsonApiMixin(object):
             items.append(item)
 
             links.update(converted.get('links', {}))
-            linked.update(converted.get('linked', {}))
+            linked = self.update_nested(linked,
+                                        converted.get('linked', {}))
             meta.update(converted.get('meta', {}))
 
         if many:

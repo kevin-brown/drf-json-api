@@ -387,8 +387,8 @@ class JsonApiMixin(object):
                 data.update(converted.pop("data", {}))
                 linked_ids.update(converted.pop("linked_ids", {}))
                 links.update(converted.get("links", {}))
-                    linked = self.update_nested(linked,
-                                                converted.get('linked', {}))
+                linked = self.update_nested(linked,
+                                            converted.get('linked', {}))
                 meta.update(converted.get("meta", {}))
             else:
                 data[field_name] = resource[field_name]

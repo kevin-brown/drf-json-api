@@ -333,7 +333,8 @@ class JsonApiMixin(object):
             items.append(item)
 
             links.update(converted.get('links', {}))
-            linked.update(converted.get('linked', {}))
+            linked = self.update_nested(linked,
+                                        converted.get('linked', {}))
             meta.update(converted.get('meta', {}))
 
         if many:
@@ -387,7 +388,8 @@ class JsonApiMixin(object):
                 data.update(converted.pop("data", {}))
                 linked_ids.update(converted.pop("linked_ids", {}))
                 links.update(converted.get("links", {}))
-                linked.update(converted.get("linked", {}))
+                linked = self.update_nested(linked,
+                                            converted.get('linked', {}))
                 meta.update(converted.get("meta", {}))
             else:
                 data[field_name] = resource[field_name]
@@ -585,6 +587,22 @@ class JsonApiMixin(object):
 
     def model_from_obj(self, obj):
         return model_from_obj(obj)
+
+    def update_nested(self, existing_linked, u):
+        for k, new_values in u.items():
+            if k in existing_linked:
+                # The dictionary already exists, so we need to check
+                # that all the already existing links in the dictionary
+                # aren't the same. If they aren't, add them.
+                for item in new_values:
+                    mapped_ids = map(lambda x: x['id'], existing_linked[k])
+                    if not item['id'] in mapped_ids:
+                        existing_linked[k].append(item)
+
+            else:
+                existing_linked[k] = new_values
+
+        return existing_linked
 
 
 class JsonApiRenderer(JsonApiMixin, renderers.JSONRenderer):

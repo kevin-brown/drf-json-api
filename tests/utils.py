@@ -1,4 +1,4 @@
-from django.utils.encoding import force_bytes
+from django.utils.encoding import force_bytes, force_text
 import json
 
 
@@ -16,3 +16,7 @@ def dump_json(data):
         json_kwargs["separators"] = (", ", ": ", )
 
     return force_bytes(json.dumps(data, **json_kwargs))
+
+
+def parse_json(data):
+    return json.loads(force_text(data))

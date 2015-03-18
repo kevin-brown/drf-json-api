@@ -20,8 +20,8 @@ class JsonApiMixin(object):
 
         resource = {}
 
-        if resource_type in data:
-            resource = data[resource_type]
+        if "data" in data:
+            resource = data["data"]
 
         if isinstance(resource, list):
             resource = [self.convert_resource(r, view) for r in resource]

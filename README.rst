@@ -77,7 +77,7 @@ Introspected resource types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 JSON API uses `resource
-types <http://jsonapi.org/format/#document-structure-resource-types>`__
+types <http://jsonapi.org/format/#document-resource-object-identification>`__
 to determine what relations exist and how to better side-load resources
 automatically. It is recommended that resource types match the URL
 structure of the API and use a plural form. The resource type is
@@ -90,15 +90,15 @@ be used for the resource type.
 Hyperlinked relations
 ~~~~~~~~~~~~~~~~~~~~~
 
-JSON API will detect hyperlinked relations and set up the `url
-templates <http://jsonapi.org/format/#document-structure-url-templates>`__
-to match the destinations and attribute names automatically.
+JSON API will detect hyperlinked relations and set up the `resource 
+links <http://jsonapi.org/format/#document-links>`__ to match the destinations
+ and attribute names automatically.
 
 Nested serializers
 ~~~~~~~~~~~~~~~~~~
 
 JSON API will render nested serializers to match the `compound document
-specification <http://jsonapi.org/format/#document-structure-compound-documents>`__.
+specification <http://jsonapi.org/format/#document-compound-documents>`__.
 This will theoretically support any depth of nested serializers, but
 only a single level is tested and supported.
 

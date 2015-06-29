@@ -70,21 +70,27 @@ local development.
 Now you can make your changes locally.
 
 4. When you're done making changes, check that your changes pass style and unit
-   tests, including testing other Python versions with tox::
+   tests, including testing other Python versions with tox. To get tox, just pip install
+   it. The best way to keep multiple Python versions to run tox against is using 
+   `pyenv`_. After installing it, run the ``pyenv_setup.sh`` file to install and 
+   setup project's supported python versions::
+
+    $ ./pyenv_setup.sh
+
+5. Great! Now, you should be able to run tox against all Python versions::
 
     $ tox
 
-To get tox, just pip install it.
-
-5. Commit your changes and push your branch to GitHub::
+6. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-6. Submit a pull request through the GitHub website.
+7. Submit a pull request through the GitHub website.
 
 .. _Fork: https://github.com/kevin-brown/drf-json-api/fork
+.. _pyenv: https://github.com/yyuu/pyenv
 
 Pull Request Guidelines
 -----------------------

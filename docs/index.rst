@@ -15,7 +15,6 @@ Contents:
    usage
    contributing
    authors
-   modules
    history
 
 Feedback

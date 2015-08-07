@@ -23,7 +23,7 @@ class WrapperNotApplicable(ValueError):
 class JsonApiMixin(object):
     convert_by_name = {
         'id': 'convert_to_text',
-        api_settings.URL_FIELD_NAME: 'rename_to_href',
+        api_settings.URL_FIELD_NAME: 'rename_to_self',
     }
 
     convert_by_type = {
@@ -404,7 +404,7 @@ class JsonApiMixin(object):
             "data": data,
         }
 
-    def rename_to_href(self, resource, field, field_name, request):
+    def rename_to_self(self, resource, field, field_name, request):
         data = self.dict_class()
 
         data["links"] = self.dict_class()
